@@ -1,0 +1,636 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Impedance on a String</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,750&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=Heebo:wght@400;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: one reading column (~44rem) with figures that widen to ~60rem; colour = meaning, the same on every figure and formula. */
+:root {
+  --bg: #f3f5f8; --surface: #ffffff; --soft: #e9edf3; --ink: #172030; --muted: #5b6678; --line: #d6dce6; --ghost: #9aa4b4;
+  --c-inc: #2c5fd4;   /* incident wave */
+  --c-r: #c9432d;     /* reflected wave, R, R_E */
+  --c-t: #0f7f68;     /* transmitted wave, T (coefficient), T_E */
+  --c-z: #7440c2;     /* impedance Z */
+  --c-ten: #a96500;   /* tension T */
+  --c-vy: #bf2f7c;    /* transverse velocity v_y */
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Source Sans 3", "Heebo", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f131a; --surface: #161b24; --soft: #212837; --ink: #e5e9f0; --muted: #9ba6b8; --line: #2b3444; --ghost: #5e6879;
+    --c-inc: #7fa3ff; --c-r: #ff8c74; --c-t: #46cfae; --c-z: #b896ff; --c-ten: #eeb04a; --c-vy: #f283c0;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f131a; --surface: #161b24; --soft: #212837; --ink: #e5e9f0; --muted: #9ba6b8; --line: #2b3444; --ghost: #5e6879;
+  --c-inc: #7fa3ff; --c-r: #ff8c74; --c-t: #46cfae; --c-z: #b896ff; --c-ten: #eeb04a; --c-vy: #f283c0;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 17px; line-height: 1.6; }
+.page { max-width: 62rem; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 64px; }
+.col { max-width: 44rem; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; line-height: 1.15; margin: 0; }
+h1 { font-size: clamp(2.1rem, 5vw, 3.2rem); font-weight: 750; letter-spacing: -0.01em; }
+h2 { font-size: clamp(1.5rem, 3.2vw, 2rem); font-weight: 750; margin-top: 8px; }
+h3 { font-size: 1.15rem; font-weight: 600; margin-top: 26px; }
+p { margin: 12px 0; }
+a { color: var(--c-inc); }
+.eyebrow { font-family: var(--font-mono); font-size: 12.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.lede { font-size: 1.15rem; color: var(--ink); max-width: 42rem; }
+he, .he { font-family: "Heebo", var(--font-body); }
+section { padding-top: 46px; scroll-margin-top: 12px; }
+section > .col > .q { font-size: 1.1rem; font-weight: 600; color: var(--muted); margin-top: 6px; }
+.src { font-family: var(--font-mono); font-size: 12px; color: var(--muted); white-space: nowrap; }
+.mine { font-family: var(--font-mono); font-size: 11.5px; color: var(--c-z); border: 1px solid currentColor; border-radius: 99px; padding: 0 6px; white-space: nowrap; }
+
+/* colour words */
+.k-inc { color: var(--c-inc); font-weight: 600; } .k-r { color: var(--c-r); font-weight: 600; } .k-t { color: var(--c-t); font-weight: 600; }
+.k-z { color: var(--c-z); font-weight: 600; } .k-ten { color: var(--c-ten); font-weight: 600; } .k-vy { color: var(--c-vy); font-weight: 600; }
+mjx-container .q-inc { color: var(--c-inc); fill: var(--c-inc); stroke: var(--c-inc); }
+mjx-container .q-r { color: var(--c-r); fill: var(--c-r); stroke: var(--c-r); }
+mjx-container .q-t { color: var(--c-t); fill: var(--c-t); stroke: var(--c-t); }
+mjx-container .q-z { color: var(--c-z); fill: var(--c-z); stroke: var(--c-z); }
+mjx-container .q-ten { color: var(--c-ten); fill: var(--c-ten); stroke: var(--c-ten); }
+mjx-container .q-vy { color: var(--c-vy); fill: var(--c-vy); stroke: var(--c-vy); }
+mjx-container[display="true"] { overflow-x: auto; overflow-y: hidden; padding: 4px 0; }
+
+/* nav */
+.toc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; padding: 0; list-style: none; }
+.toc a { display: inline-block; text-decoration: none; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 99px; padding: 4px 12px; font-size: 14.5px; }
+.toc a:hover, .toc a:focus-visible { border-color: var(--c-z); color: var(--c-z); }
+
+/* figures */
+.fig { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; margin: 20px 0; }
+.fig canvas { display: block; width: 100%; touch-action: pan-y; border-radius: 6px; }
+#sim-shake canvas { touch-action: none; }
+.fig .cap { font-size: 15px; color: var(--muted); margin: 10px 2px 0; }
+.say { font-size: 15.5px; margin: 10px 2px 0; min-height: 2.6em; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; margin-top: 12px; }
+.btns { display: flex; flex-wrap: wrap; gap: 6px; }
+button { font: inherit; font-size: 14.5px; color: var(--ink); background: var(--soft); border: 1px solid var(--line); border-radius: 7px; padding: 5px 11px; cursor: pointer; }
+button:hover { border-color: var(--muted); }
+button[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--c-z); outline-offset: 2px; }
+.slider { display: flex; align-items: center; gap: 8px; font-size: 14.5px; flex-wrap: wrap; }
+.slider input[type=range] { width: min(220px, 60vw); accent-color: var(--c-z); }
+.slider output { font-family: var(--font-mono); font-size: 13.5px; min-width: 7ch; }
+label.chk { font-size: 14.5px; display: inline-flex; gap: 6px; align-items: center; }
+.readout { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 8px; margin-top: 12px; }
+.readout div { background: var(--soft); border-radius: 7px; padding: 6px 10px; min-width: 0; }
+.readout .lab { font-size: 12.5px; color: var(--muted); display: block; }
+.readout .val { font-family: var(--font-mono); font-size: 15px; font-variant-numeric: tabular-nums; }
+.bar { display: flex; height: 14px; border-radius: 99px; overflow: hidden; background: var(--soft); margin-top: 10px; }
+.bar span { display: block; height: 100%; transition: width .25s; }
+.bar .r { background: var(--c-r); } .bar .t { background: var(--c-t); }
+.barlab { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-top: 4px; }
+.widget-error { color: var(--c-r); font-size: 14px; }
+
+/* the letters */
+.letters { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; margin-top: 16px; }
+.letter { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; min-width: 0; }
+.letter .sym { font-size: 1.25rem; }
+.letter .name { font-weight: 700; }
+.letter p { margin: 4px 0 0; font-size: 15px; }
+.letter .unit { font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); }
+.group-title { font-family: var(--font-mono); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-top: 22px; }
+.warn { border-left: 3px solid var(--c-ten); background: color-mix(in srgb, var(--c-ten) 9%, var(--surface)); padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 16px 0; font-size: 15.5px; }
+
+/* derivations */
+.deriv { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 6px 16px 12px; margin: 18px 0; }
+.deriv h4 { font-family: var(--font-display); font-size: 1rem; margin: 10px 0 4px; }
+.deriv ol { list-style: none; counter-reset: step; padding: 0; margin: 0; }
+.deriv li { counter-increment: step; position: relative; padding: 8px 0 8px 36px; border-top: 1px dashed var(--line); min-width: 0; }
+.deriv li::before { content: counter(step); position: absolute; left: 0; top: 10px; width: 24px; height: 24px; border-radius: 50%; background: var(--soft); font-family: var(--font-mono); font-size: 13px; display: grid; place-items: center; }
+.deriv .why { font-size: 15.5px; }
+.deriv .check { border-top: 1px solid var(--line); padding-top: 8px; margin-top: 4px; font-size: 15px; color: var(--muted); }
+
+/* key idea */
+.key { background: color-mix(in srgb, var(--c-z) 8%, var(--surface)); border: 1px solid color-mix(in srgb, var(--c-z) 35%, var(--line)); border-radius: var(--radius); padding: 12px 16px; margin: 18px 0; }
+.key b { color: var(--c-z); }
+.try { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+
+/* tables */
+.tablewrap { overflow-x: auto; margin: 16px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 15px; background: var(--surface); }
+th, td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; vertical-align: top; }
+th { background: var(--soft); font-weight: 600; }
+
+/* self-test: question -> answer */
+.qa { display: grid; gap: 10px; margin-top: 14px; }
+details { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 14px; }
+details summary { cursor: pointer; font-weight: 600; }
+details[open] summary { margin-bottom: 6px; }
+details .ans { border-left: 3px solid var(--c-t); padding-left: 12px; }
+.recap { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-top: 14px; }
+.recap div { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 14px; min-width: 0; }
+.recap .plain { font-size: 15px; color: var(--muted); margin: 4px 0 0; }
+footer { margin-top: 48px; font-size: 14px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 14px; }
+@media (max-width: 520px) { body { font-size: 16px; } .fig { padding: 10px; } }
+@media (prefers-reduced-motion: reduce) { .bar span { transition: none; } }
+</style>
+<script>
+window.MathJax = {
+  tex: {
+    packages: { '[+]': ['html', 'color'] },
+    inlineMath: [['\\(', '\\)']],
+    macros: {
+      Zc: '\\class{q-z}{Z}', Zi: ['\\class{q-z}{Z_{#1}}', 1],
+      Rc: '\\class{q-r}{R}', Tc: '\\class{q-t}{T}',
+      Ten: '\\class{q-ten}{T}', Teni: ['\\class{q-ten}{T_{#1}}', 1],
+      vy: '\\class{q-vy}{v_y}',
+      fI: '\\class{q-inc}{f_i}', fR: '\\class{q-r}{f_r}', fT: '\\class{q-t}{f_t}',
+      psiI: '\\class{q-inc}{\\psi_i}', psiR: '\\class{q-r}{\\psi_r}', psiT: '\\class{q-t}{\\psi_t}',
+      RE: '\\class{q-r}{R_E}', TE: '\\class{q-t}{T_E}',
+      dt: '\\partial_t', dx: '\\partial_x'
+    }
+  },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" defer></script>
+
+<div class="page">
+<header id="top" class="col">
+  <div class="eyebrow">Waves 83325 · lectures 07–10 · <span class="he" lang="he">עכבה</span></div>
+  <h1>Impedance on a String</h1>
+  <p class="lede">When a wave reaches the place where one string meets another, part of it bounces back and part goes on. One number per string decides how much: its <span class="k-z">impedance Z</span>. This page builds that number from nothing, says what every letter is for, and lets you play with each idea.</p>
+</header>
+
+<div class="fig" id="sim-junction">
+  <canvas aria-label="Animation: a pulse on string 1 reaches a junction with string 2 and splits into a reflected and a transmitted pulse"></canvas>
+  <div class="controls">
+    <div class="btns" role="group" aria-label="What is on the right">
+      <button data-preset="wall">Wall</button>
+      <button data-preset="heavy">Heavier string (ρ×4)</button>
+      <button data-preset="same">Same string</button>
+      <button data-preset="matched">Matched, faster (T×3, ρ÷3)</button>
+      <button data-preset="light">Lighter string (ρ÷4)</button>
+      <button data-preset="free">Free end</button>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="slider"><label for="j-rho">density ρ₂ / ρ₁</label><input id="j-rho" type="range" min="-2" max="2" step="0.01" value="0.6"><output id="j-rho-out"></output></div>
+    <div class="slider"><label for="j-ten"><span class="k-ten">tension</span> T₂ / T₁</label><input id="j-ten" type="range" min="-1" max="1" step="0.01" value="0"><output id="j-ten-out"></output></div>
+  </div>
+  <div class="controls">
+    <div class="btns" role="group" aria-label="Pulse shape"><button data-shape="bump">Single bump</button><button data-shape="packet">Wave packet</button></div>
+    <label class="chk"><input type="checkbox" id="j-parts" checked> show the parts (dashed)</label>
+    <label class="chk"><input type="checkbox" id="j-ghost"> show the mirror trick</label>
+    <div class="btns"><button id="j-play">Pause</button><button id="j-restart">Restart</button></div>
+  </div>
+  <div class="readout">
+    <div><span class="lab">Z₂ / Z₁</span><span class="val k-z" id="j-zr"></span></div>
+    <div><span class="lab">speed v₂ / v₁</span><span class="val" id="j-vr"></span></div>
+    <div><span class="lab">R (height of the echo)</span><span class="val k-r" id="j-R"></span></div>
+    <div><span class="lab">T (height passed on)</span><span class="val k-t" id="j-T"></span></div>
+    <div><span class="lab">power back R_E</span><span class="val k-r" id="j-RE"></span></div>
+    <div><span class="lab">power through T_E</span><span class="val k-t" id="j-TE"></span></div>
+  </div>
+  <div class="bar" aria-hidden="true"><span class="r" id="j-bar-r"></span><span class="t" id="j-bar-t"></span></div>
+  <div class="barlab"><span>reflected power</span><span>transmitted power</span></div>
+  <p class="say" id="j-say" aria-live="polite"></p>
+  <p class="cap">The solid black line is the real string. Dashed: the <span class="k-inc">incident</span>, <span class="k-r">reflected</span> and <span class="k-t">transmitted</span> waves that add up to it. A thicker line means a denser string. The mirror trick (grey) is explained in section 2. This uses the exact solution of L07–L08, not a numerical guess.</p>
+</div>
+
+<nav class="col" aria-label="Sections">
+  <ul class="toc">
+    <li><a href="#letters">The letters</a></li>
+    <li><a href="#rules">1 · Two rules at a junction</a></li>
+    <li><a href="#solve">2 · R and T</a></li>
+    <li><a href="#meaning">3 · What Z is</a></li>
+    <li><a href="#matching">4 · Matching</a></li>
+    <li><a href="#energy">5 · Energy</a></li>
+    <li><a href="#standing">6 · Standing waves</a></li>
+    <li><a href="#packets">7 · Wave packets</a></li>
+    <li><a href="#media">8 · Other media</a></li>
+    <li><a href="#check">Check yourself</a></li>
+    <li><a href="#recap">One-screen recap</a></li>
+  </ul>
+</nav>
+
+<!-- ================= LETTERS ================= -->
+<section id="letters">
+  <div class="col">
+    <h2>The letters, and what each one is for</h2>
+    <p class="q">You will meet these on every page of lectures 07–10. Each has a job. The colour of a letter stays the same in every formula and figure below.</p>
+  </div>
+  <div class="group-title">The string itself</div>
+  <div class="letters">
+    <div class="letter"><span class="sym">\(\rho\)</span> <span class="name">linear density</span> <span class="unit">kg/m</span><p>Mass per metre of string. It is the string's <em>inertia</em>: how hard it is to get it moving.</p></div>
+    <div class="letter"><span class="sym">\(\Ten\)</span> <span class="name k-ten">tension</span> <span class="unit">N</span><p>How hard the string is pulled. It is the <em>restoring force</em>: what pulls a bent string back straight.</p></div>
+    <div class="letter"><span class="sym">\(v=\sqrt{\Ten/\rho}\)</span> <span class="name">wave speed</span> <span class="unit">m/s</span><p>How fast a shape travels along the string. Tight and light means fast. (Called \(c\) in L05–06 and again from L09 p.9.)</p></div>
+    <div class="letter"><span class="sym">\(\Zc=\sqrt{\Ten\rho}\)</span> <span class="name k-z">impedance</span> <span class="unit">kg/s</span><p>How hard the string is to <em>shake</em>. Tight and heavy means high impedance. The only property of a string that a junction feels. Section 3.</p></div>
+  </div>
+  <div class="group-title">The wave on it</div>
+  <div class="letters">
+    <div class="letter"><span class="sym">\(\psi(x,t)\)</span> <span class="name">displacement</span> <span class="unit">m</span><p>How far the point at position \(x\) is from the straight line, at time \(t\). The string's picture.</p></div>
+    <div class="letter"><span class="sym">\(\dx\psi\)</span> <span class="name">slope</span> <span class="unit">no unit</span><p>The steepness of the string at a point. Tension times slope is the vertical pull there.</p></div>
+    <div class="letter"><span class="sym">\(\vy=\dt\psi\)</span> <span class="name k-vy">transverse velocity</span> <span class="unit">m/s</span><p>How fast a <em>point</em> of the string moves up and down. Not the wave speed \(v\): the point goes up and down while the shape runs sideways.</p></div>
+    <div class="letter"><span class="sym">\(f(t-x/v)\)</span> <span class="name">a shape moving right</span><p>Any function of the single combination \(t-x/v\) is a right-mover; \(f(t+x/v)\) moves left. The lecture uses this to handle any pulse at once.</p></div>
+  </div>
+  <div class="group-title">At a junction</div>
+  <div class="letters">
+    <div class="letter"><span class="sym">\(\fI,\ \fR,\ \fT\)</span> <span class="name">the three profiles</span><p>The <span class="k-inc">incident</span> shape coming in, the <span class="k-r">reflected</span> one going back, the <span class="k-t">transmitted</span> one going on. Their wave fields are \(\psiI,\psiR,\psiT\).</p></div>
+    <div class="letter"><span class="sym">\(s\)</span> <span class="name">the argument</span><p>Just a name for "whatever goes inside \(f\)". The lecture writes \(f(s)\) to stress it is one variable, not necessarily time (L07 p.3).</p></div>
+    <div class="letter"><span class="sym">\(\Rc\)</span> <span class="name k-r">reflection coefficient</span> <span class="unit">no unit</span><p>Height of the echo ÷ height of the incoming pulse. Negative means the echo is upside down.</p></div>
+    <div class="letter"><span class="sym">\(\Tc\)</span> <span class="name k-t">transmission coefficient</span> <span class="unit">no unit</span><p>Height of the pulse that goes on ÷ height of the incoming pulse. It can be bigger than 1.</p></div>
+  </div>
+  <div class="group-title">Energy (L09)</div>
+  <div class="letters">
+    <div class="letter"><span class="sym">\(\mathcal E\)</span> <span class="name">energy density</span> <span class="unit">J/m</span><p>Energy stored per metre of string: motion (kinetic) plus stretch (potential).</p></div>
+    <div class="letter"><span class="sym">\(P\)</span> <span class="name">power</span> <span class="unit">W</span><p>Energy per second flowing past a point, counted positive to the right.</p></div>
+    <div class="letter"><span class="sym">\(\RE,\ \TE\)</span> <span class="name">power fractions</span><p>The share of the incoming <em>power</em> that goes back and that goes on. They add to 1. They are not \(\Rc\) and \(\Tc\).</p></div>
+  </div>
+  <div class="col">
+    <div class="warn"><b>One letter, three jobs.</b> The lecture uses \(T\) for the period (L05), the <span class="k-ten">tension</span> (L06 on) and the <span class="k-t">transmission coefficient</span> (L07 on), sometimes on the same page. Here the tension is always <span class="k-ten">amber</span> \(\Ten\) and the coefficient always <span class="k-t">green</span> \(\Tc\). In the same way, \(\psi_t\) is the transmitted wave in L07 and L09 p.4, so this page writes the velocity as \(\vy\) or \(\dt\psi\), never \(\psi_t\).</div>
+  </div>
+</section>
+
+<!-- ================= 1. RULES ================= -->
+<section id="rules">
+  <div class="col">
+    <div class="eyebrow">1 · L07 p.1–3, L08 p.1</div>
+    <h2>Why a junction needs exactly two rules</h2>
+    <p class="q">Until L07 the string was infinite and uniform, so nothing ever came back. What changes when two different strings are tied together?</p>
+    <p>Put string 1 on \(x&lt;0\) and string 2 on \(x&gt;0\), joined at \(x=0\). A pulse comes from the left. Two things can come out of the junction: an echo going left and a pulse going right. So there are <b>two unknown shapes</b>, \(\fR\) and \(\fT\). To find two unknowns you need two equations. The junction gives exactly two:</p>
+    <ol>
+      <li><b>The string does not tear.</b> Both sides have the same height at \(x=0\) at every moment.</li>
+      <li><b>No net force on the knot.</b> The knot has no mass, so any net vertical force would give it infinite acceleration. The two vertical pulls must cancel.</li>
+    </ol>
+    <p>The vertical pull of a string at a point is its <span class="k-ten">tension</span> times its slope (for small slopes). Try it:</p>
+  </div>
+  <div class="fig" id="sim-balance">
+    <canvas aria-label="Force diagram: a massless knot pulled by two strings; arrows show their vertical pulls and the net force"></canvas>
+    <div class="controls">
+      <div class="slider"><label for="b-slope">slope of string 2</label><input id="b-slope" type="range" min="-0.3" max="1.2" step="0.01" value="0.8"><output id="b-slope-out"></output></div>
+      <div class="slider"><label for="b-ten"><span class="k-ten">tension</span> T₂ / T₁</label><input id="b-ten" type="range" min="-0.3" max="0.3" step="0.01" value="0"><output id="b-ten-out"></output></div>
+    </div>
+    <p class="say" id="b-say" aria-live="polite"></p>
+  </div>
+  <div class="col">
+    <p>With equal tensions the second rule says "the slope is continuous" (L07). When the tensions differ, it says \(\Teni1\,\dx\psi_L=\Teni2\,\dx\psi_R\) (L08 p.1). L08 builds such a junction from a massless ring sliding on a vertical rod: the rod takes up the sideways difference between the two tensions, so they can differ.</p>
+  </div>
+</section>
+
+<!-- ================= 2. SOLVE ================= -->
+<section id="solve">
+  <div class="col">
+    <div class="eyebrow">2 · L07 p.3–5, L08 p.2</div>
+    <h2>From the two rules to R and T</h2>
+    <p class="q">What shapes come out, for any incoming pulse?</p>
+    <p>On the left the string carries the incoming and the reflected wave together; on the right only the transmitted one. Write each as a shape moving the right way, then apply the two rules at \(x=0\).</p>
+  </div>
+  <div class="deriv col">
+    <h4>Derivation: reflection and transmission coefficients</h4>
+    <ol>
+      <li><div class="why">Write the field on each side. The incoming and transmitted shapes move right, the echo moves left (L07 p.1–2).</div>
+        \[\psi_L=\fI\!\left(t-\tfrac{x}{v_1}\right)+\fR\!\left(t+\tfrac{x}{v_1}\right),\qquad \psi_R=\fT\!\left(t-\tfrac{x}{v_2}\right)\]</li>
+      <li><div class="why">Rule 1, the string does not tear: set \(\psi_L=\psi_R\) at \(x=0\).</div>
+        \[\fI(t)+\fR(t)=\fT(t)\]</li>
+      <li><div class="why">Rule 2, no net force on the knot: \(\Teni1\dx\psi_L=\Teni2\dx\psi_R\) at \(x=0\). The chain rule gives \(\dx f(t\mp x/v)=\mp\tfrac1v f'\).</div>
+        \[-\frac{\Teni1}{v_1}\fI'+\frac{\Teni1}{v_1}\fR'=-\frac{\Teni2}{v_2}\fT'\]</li>
+      <li><div class="why">Every string enters only through the combination \(\Ten/v\). Give it a name: the <span class="k-z">impedance</span> (L08 p.2). Then integrate in time; the constant is zero because the string is at rest before the pulse arrives.</div>
+        \[\Zc\equiv\frac{\Ten}{v}=\sqrt{\Ten\rho}\qquad\Longrightarrow\qquad \Zi1\bigl(\fI-\fR\bigr)=\Zi2\,\fT\]</li>
+      <li><div class="why">Two equations, two unknowns. Put \(\fT=\fI+\fR\) into step 4 and solve for \(\fR\), then for \(\fT\).</div>
+        \[\fR(s)=\frac{\Zi1-\Zi2}{\Zi1+\Zi2}\,\fI(s),\qquad \fT(s)=\frac{2\Zi1}{\Zi1+\Zi2}\,\fI(s)\]</li>
+    </ol>
+    \[\boxed{\ \Rc=\frac{\Zi1-\Zi2}{\Zi1+\Zi2},\qquad \Tc=\frac{2\Zi1}{\Zi1+\Zi2},\qquad 1+\Rc=\Tc\ }\]
+    <div class="check">Check: \(\Rc\) and \(\Tc\) have no units (a ratio of two impedances). Same string, \(\Zi1=\Zi2\): \(\Rc=0,\ \Tc=1\), as if there were no junction. Wall, \(\Zi2\to\infty\): \(\Rc=-1\). And \(1+\Rc=\Tc\) is just rule 1 divided by \(\fI\).</div>
+  </div>
+  <div class="col">
+    <p><b>Why L07's formula looks different.</b> L07 had one tension for both strings. Then \(\Zc=\Ten/v\) is proportional to \(1/v\), and the same result reads \(\Rc=\frac{v_2-v_1}{v_2+v_1}=\frac{\sqrt{\rho_1}-\sqrt{\rho_2}}{\sqrt{\rho_1}+\sqrt{\rho_2}}\). L08 p.2 gets the general form by replacing every \(v\) with \(1/\Zc\). The \(\Zc\) form is the one that always works.</p>
+    <h3>What the shapes look like (L07 p.3–4)</h3>
+    <p>Put the arguments back in and you get the whole picture, for any pulse shape:</p>
+    \[\psiR(x,t)=\Rc\,\psiI(-x,t),\qquad \psiT(x,t)=\Tc\,\psiI\!\left(\tfrac{v_1}{v_2}x,\ t\right)\]
+    <p><b>The mirror trick.</b> \(\psiI(-x,t)\) is the incoming pulse as if the junction were not there (it would have carried on into \(x&gt;0\)), reflected in a mirror at \(x=0\). The echo is that mirror image times \(\Rc\). Tick "show the mirror trick" in the top figure: the grey dashed pulse is the one that "would have continued", the grey dotted one is its mirror image, and the red echo is the dotted one scaled by \(\Rc\).</p>
+    <p><b>The transmitted pulse</b> has the same shape and the same duration in time, scaled by \(\Tc\). Because it moves \(v_2/v_1\) times faster, it is \(v_2/v_1\) times <em>wider</em> in space: "similar, but faster and wider" (L07 p.4).</p>
+    <h3>The five cases of L07 p.5–8</h3>
+    <div class="tablewrap"><table>
+      <thead><tr><th>What is on the right</th><th>\(\Zi2\)</th><th>\(\Rc\)</th><th>\(\Tc\)</th><th>What you see</th></tr></thead>
+      <tbody>
+        <tr><td>wall (infinitely dense)</td><td>\(\infty\)</td><td>\(-1\)</td><td>\(0\)</td><td>the pulse comes back upside down</td></tr>
+        <tr><td>heavier string</td><td>\(&gt;\Zi1\)</td><td>between \(-1\) and \(0\)</td><td>between \(0\) and \(1\)</td><td>inverted echo, smaller pulse goes on</td></tr>
+        <tr><td>the same string</td><td>\(=\Zi1\)</td><td>\(0\)</td><td>\(1\)</td><td>"no boundary at all, everything passes"</td></tr>
+        <tr><td>lighter string</td><td>\(&lt;\Zi1\)</td><td>between \(0\) and \(1\)</td><td>between \(1\) and \(2\)</td><td>upright echo, taller pulse goes on</td></tr>
+        <tr><td>nothing (free end)</td><td>\(0\)</td><td>\(+1\)</td><td>\(2\)</td><td>the pulse comes back upright; the end swings to twice the height</td></tr>
+      </tbody>
+    </table></div>
+    <div class="try" id="try-buttons">
+      <button data-try="wall">Show me: wall</button>
+      <button data-try="heavy">heavier</button>
+      <button data-try="same">same</button>
+      <button data-try="light">lighter</button>
+      <button data-try="free">free end</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 3. MEANING ================= -->
+<section id="meaning">
+  <div class="col">
+    <div class="eyebrow">3 · L08 p.2–3 · <span class="he" lang="he">משמעות העכבה</span></div>
+    <h2>What impedance actually is</h2>
+    <p class="q">The left string only ever touches the knot. So what does the whole right-hand string feel like, seen from the knot?</p>
+    <p>Answer: <b>like a damper</b>, a piston in oil that pushes back in proportion to how fast you move it. Shake the end of a long string, and the force you feel is exactly what a damper of constant \(\Zc\) would give. Drag the black handle up and down (or watch it move by itself):</p>
+  </div>
+  <div class="fig" id="sim-shake">
+    <canvas aria-label="Interactive: drag a handle that shakes the end of a string (top) and a damper (bottom); both push back with the same force"></canvas>
+    <div class="controls">
+      <div class="slider"><label for="s-ten"><span class="k-ten">tension</span> T</label><input id="s-ten" type="range" min="5" max="80" step="1" value="20"><output id="s-ten-out"></output></div>
+      <div class="slider"><label for="s-rho">density ρ</label><input id="s-rho" type="range" min="1" max="40" step="1" value="4"><output id="s-rho-out"></output></div>
+      <div class="btns"><button id="s-play">Pause</button></div>
+    </div>
+    <div class="readout">
+      <div><span class="lab">wave speed v</span><span class="val" id="s-v"></span></div>
+      <div><span class="lab">impedance Z = √(Tρ)</span><span class="val k-z" id="s-Z"></span></div>
+      <div><span class="lab">hand velocity v_y</span><span class="val k-vy" id="s-vy"></span></div>
+      <div><span class="lab">force from string</span><span class="val k-z" id="s-F"></span></div>
+      <div><span class="lab">force from damper</span><span class="val" id="s-Fd"></span></div>
+    </div>
+    <p class="cap"><span class="k-vy">Pink arrow</span>: the velocity \(\vy\) of the hand. <span class="k-z">Violet arrow</span>: the force pushing back on the hand. The string's force is computed from the string's own slope at the end (\(\Ten\,\dx\psi\)); the damper's from \(-\Zc\vy\). On wider screens two force traces appear on the right, and they lie on top of each other. Raise the tension or the density and the push-back grows. (Real numbers; the string is shown in slow motion, and a full lane height is 2 cm of real displacement.)</p>
+  </div>
+  <div class="deriv col">
+    <h4>Derivation: the string beyond the knot is a damper (L08 p.2–3)</h4>
+    <ol>
+      <li><div class="why">The vertical force of string 2 on the knot is its tension times its slope there.</div>
+        \[F_y=\Teni2\,\dx\psi_R\big|_{x=0}\]</li>
+      <li><div class="why">String 2 carries only a wave moving away, \(\fT(t-x/v_2)\). For such a wave the slope is fixed by the velocity: \(\dx\fT=-\tfrac1{v_2}\dt\fT\).</div>
+        \[F_y=-\frac{\Teni2}{v_2}\,\dt\psi_R\big|_{x=0}\]</li>
+      <li><div class="why">\(\Teni2/v_2\) is \(\Zi2\), and \(\dt\psi\) at the knot is its velocity \(\vy\).</div>
+        \[\boxed{\ F_y=-\Zc\,\vy\ }\]</li>
+    </ol>
+    <div class="check">Check: units \(\mathrm{N}/(\mathrm{m/s})=\mathrm{kg/s}\) ✓. The minus sign: the force always opposes the motion, like friction. "A large impedance means strong damping" (L08 p.3). Condition: step 2 needs a wave moving <em>away</em> only. If something comes back (a second junction, a wall far away), the string is no longer a pure damper; that is how standing waves arise in section 6.</div>
+  </div>
+  <div class="col">
+    <p>That is the purpose of \(\Zc\): <b>it replaces the whole string beyond a point by one number</b>, the ratio of force to velocity. That is also why the junction "sees" only \(\Zi1\) and \(\Zi2\), and why two strings with the same \(\Zc\) look identical to it, whatever their \(\rho\) and \(\Ten\) separately (L08 p.3–4).</p>
+    <div class="key"><b>Why \(\sqrt{\Ten\rho}\)?</b> <span class="mine">mine, a picture</span> Move the end up at speed \(\vy\). In one second the wave front runs a distance \(v\) along the string, so a length \(v\) of string, of mass \(\rho v\), goes from rest to speed \(\vy\). The momentum you hand out per second is \(\rho v\cdot\vy\), and momentum per second is force: \(F=\rho v\,\vy\). So \(\Zc=\rho v=\rho\sqrt{\Ten/\rho}=\sqrt{\Ten\rho}\). Heavier string: more mass to set moving. Tighter string: the front runs faster and recruits more string each second. Both raise \(\Zc\).</div>
+    <p><b>Where does the energy go?</b> A real damper turns your work into heat. The string does not: it carries the energy away as a wave, and a load far away can collect it (Crawford 4.4). That is why "impedance" and not "friction": the string resists like a damper, but it passes the energy on.</p>
+  </div>
+</section>
+
+<!-- ================= 4. MATCHING ================= -->
+<section id="matching">
+  <div class="col">
+    <div class="eyebrow">4 · L08 p.3–6 · <span class="he" lang="he">תיאום עכבות</span></div>
+    <h2>Matching: when the junction disappears</h2>
+    <p class="q">When does everything pass through? And is a "softer" second string better?</p>
+    <p>\(\Rc=0\) exactly when \(\Zi1=\Zi2\). This is <b>impedance matching</b>. The second string then pushes back on the knot exactly as the first string itself would, so the knot cannot tell that anything changed. Drag along the curve:</p>
+  </div>
+  <div class="fig" id="sim-curves">
+    <canvas aria-label="Plot of R, T, R_E and T_E against Z2/Z1 on a log scale, with a draggable marker"></canvas>
+    <div class="controls">
+      <div class="slider"><label for="c-zr">impedance ratio Z₂ / Z₁</label><input id="c-zr" type="range" min="-2" max="2" step="0.01" value="-1"><output id="c-zr-out"></output></div>
+    </div>
+    <div class="readout">
+      <div><span class="lab">R</span><span class="val k-r" id="c-R"></span></div>
+      <div><span class="lab">T</span><span class="val k-t" id="c-T"></span></div>
+      <div><span class="lab">R_E (power back)</span><span class="val k-r" id="c-RE"></span></div>
+      <div><span class="lab">T_E (power through)</span><span class="val k-t" id="c-TE"></span></div>
+    </div>
+    <p class="say" id="c-say" aria-live="polite"></p>
+    <p class="cap">Solid: heights \(\Rc\) (red) and \(\Tc\) (green). Dashed: power fractions \(\RE\) and \(\TE\) (section 5). Drag on the plot or use the slider.</p>
+  </div>
+  <div class="col">
+    <h3>The trap the lecturer warns about (L08 p.4)</h3>
+    <p>"One might think transmission would be better for a low impedance, as if there were less resistance. <span class="he" lang="he">זה לא נכון</span>!" Go left on the curve. \(\Tc\) climbs towards 2, so the transmitted pulse is <em>taller</em>. But the power through, \(\TE\), falls to zero. Why: a low-impedance string barely pushes back on the knot (\(F_y=-\Zi2\vy\) is tiny), and power is force times velocity. A big wiggle with no force behind it carries almost nothing. At \(\Zi2=0\) the end is free: it swings to twice the height and delivers no power at all.</p>
+    <h3>Same impedance, different speed</h3>
+    <p>Matching is about \(\Zc\), not about the speed. The lecture's example (L08 p.3): \(\Teni2=3\Teni1\) and \(\rho_2=\rho_1/3\). Then \(\Zi2=\sqrt{3\Teni1\cdot\rho_1/3}=\Zi1\), matched, while \(v_2=\sqrt{3\Teni1/(\rho_1/3)}=3v_1\).</p>
+    <div class="try"><button data-try="matched">Show me: no echo, yet three times faster and wider</button></div>
+    <h3>The same rule in a circuit (L08 p.4–5)</h3>
+    <p>Read \(\Zc=F/v\) with force → voltage \(V\) and velocity → current \(I\): it becomes \(R=V/I\), Ohm's law. A source with internal resistance \(R_S\) feeds a load \(R_L\). The load receives \(P_L=V^2R_L/(R_S+R_L)^2\), and setting \(\partial P_L/\partial R_L=0\) gives \(R_L=R_S\): the load must match the source.</p>
+    <p><b>Complex impedance (L08 p.6).</b> Capacitors and coils make the "resistance" complex; it is then called impedance, and its complex part "simply describes a phase difference between the source and the load". Matching still decides how much power gets through, which is why it matters for transmission lines and antennas.</p>
+  </div>
+  <div class="fig" id="sim-circuit">
+    <canvas aria-label="Plot of the power delivered to a load against R_L / R_S, peaking at 1"></canvas>
+    <div class="controls">
+      <div class="slider"><label for="k-rl">load R_L / R_S</label><input id="k-rl" type="range" min="-1.3" max="1.3" step="0.01" value="-0.7"><output id="k-rl-out"></output></div>
+    </div>
+    <div class="readout"><div><span class="lab">share of the maximum power</span><span class="val k-z" id="k-P"></span></div></div>
+    <p class="cap"><span class="mine">mine, a connection</span> Divided by its maximum \(V^2/4R_S\), the load power is \(\dfrac{4R_SR_L}{(R_S+R_L)^2}\). That is exactly \(\TE=\dfrac{4\Zi1\Zi2}{(\Zi1+\Zi2)^2}\) of the strings, the dashed green curve above. Same curve, same peak at "equal".</p>
+  </div>
+  <div class="col">
+    <h3>The megaphone (<span class="he" lang="he">מגהפון</span>, L08 p.6): change slowly</h3>
+    <p>Sometimes you cannot pick \(\Zi2\); the two media are given (a loudspeaker and the room, a probe and skin). The fix: join them through a region whose impedance changes <em>gradually</em>, slowly compared with the wavelength. Each small step reflects a tiny wave, and over a long taper these tiny echoes cancel each other. Compare an abrupt jump with a gradual one of the same total size:</p>
+  </div>
+  <div class="fig" id="sim-taper">
+    <canvas aria-label="Two numerical strings: an abrupt impedance step reflects a wave packet; a gradual taper of the same total ratio barely reflects"></canvas>
+    <div class="controls">
+      <div class="slider"><label for="h-len">length of the gradual part</label><input id="h-len" type="range" min="0.1" max="1.5" step="0.05" value="0.5"><output id="h-len-out"></output></div>
+      <div class="btns"><button id="h-play">Pause</button><button id="h-restart">Restart</button></div>
+    </div>
+    <div class="readout">
+      <div><span class="lab">power reflected, abrupt</span><span class="val k-r" id="h-abrupt"></span></div>
+      <div><span class="lab">power reflected, gradual</span><span class="val k-r" id="h-taper"></span></div>
+    </div>
+    <p class="cap"><span class="mine">mine, a numerical demo</span> A string of 2600 point masses (part of it off screen), solved step by step; the shaded band is \(\Zc(x)\). The abrupt jump (\(\Zc\times3\)) reflects \(\RE=\big(\tfrac{1-3}{1+3}\big)^2=25\%\), and the simulation measures that too, which checks it. λ is the wavelength on the light side. Even half a wavelength of taper cuts the echo to about 1%. Ultrasound gel does the same job: it removes the air layer, a huge impedance jump, between the probe and the skin.</p>
+  </div>
+  <div class="col">
+    <div class="key"><b>How it's examined.</b> Reflection and transmission at a junction is among the most regular topics of the course: in 12 of the 13 finals since 2020 and in 8 of 14 past quizzes. Impedance and matching come in 5 of those finals and 9 quizzes. The usual forms: \(\Rc\), \(\Tc\) and the share of power that crosses at a junction, or the concept question "what is matching, and why not \(\Zi2=0\)?" (counts from the course's exam map).</div>
+  </div>
+</section>
+
+<!-- ================= 5. ENERGY ================= -->
+<section id="energy">
+  <div class="col">
+    <div class="eyebrow">5 · L09 p.1–5 · <span class="he" lang="he">אנרגיה של גל</span></div>
+    <h2>Energy: impedance is also the power price</h2>
+    <p class="q">A wave carries energy along. How much power, and how is it shared at a junction?</p>
+    <p>A small piece \(dx\) of string has two kinds of energy. It moves, so it has kinetic energy \(\tfrac12(\rho\,dx)\vy^2\). It is bent, so it is stretched a little, by \(\tfrac12(\dx\psi)^2dx\); that costs \(\Ten\) times the stretch, potential energy \(\tfrac12\Ten(\dx\psi)^2dx\) (L09 p.1–2). Per metre:</p>
+    \[\mathcal E=\tfrac12\rho\,(\dt\psi)^2+\tfrac12\Ten\,(\dx\psi)^2\]
+  </div>
+  <div class="deriv col">
+    <h4>Derivation: power carried by a wave (L09 p.3–4)</h4>
+    <ol>
+      <li><div class="why">Power is force times velocity. The string on the left of a point pulls the string on its right with the vertical force \(-\Ten\dx\psi\), and that point moves at \(\vy=\dt\psi\).</div>
+        \[P=-\Ten\,\dx\psi\,\dt\psi\]</li>
+      <li><div class="why">For a wave moving right, the slope is fixed by the velocity, \(\dx\psi=-\tfrac1v\dt\psi\) (the same step as in section 3).</div>
+        \[P=\frac{\Ten}{v}(\dt\psi)^2\]</li>
+      <li><div class="why">\(\Ten/v=\Zc\) again. The power is the impedance times the velocity squared. The same step shows kinetic = potential, so \(\mathcal E=\rho(\dt\psi)^2\) and \(P=v\,\mathcal E\).</div>
+        \[\boxed{\ P=\Zc\,(\dt\psi)^2=v\,\mathcal E\ }\quad\text{(right-mover; a left-mover has }P=-\Zc(\dt\psi)^2)\]</li>
+      <li><div class="why">At the junction, all three waves have the same time profile at \(x=0\), scaled by 1, \(\Rc\), \(\Tc\). The echo moves in string 1 (\(\Zi1\)), the transmitted wave in string 2 (\(\Zi2\)). Compare their powers with the incoming one (L09 p.4–5).</div>
+        \[\RE=\left|\frac{P_r}{P_i}\right|=\frac{\Zi1\Rc^2}{\Zi1}=\Rc^2,\qquad \TE=\left|\frac{P_t}{P_i}\right|=\frac{\Zi2}{\Zi1}\Tc^2=\frac{4\Zi1\Zi2}{(\Zi1+\Zi2)^2}\]</li>
+    </ol>
+    \[\boxed{\ \RE=\Rc^2,\qquad \TE=\frac{\Zi2}{\Zi1}\,\Tc^2,\qquad \RE+\TE=\frac{(\Zi1-\Zi2)^2+4\Zi1\Zi2}{(\Zi1+\Zi2)^2}=1\ }\]
+    <div class="check">Check: units of \(\Zc(\dt\psi)^2\) are \(\mathrm{kg/s}\cdot\mathrm{m^2/s^2}=\mathrm{W}\) ✓. Energy is conserved at the junction ✓. Trap: \(\Tc^2\) alone is <em>not</em> the power fraction. \(\Tc\) compares heights; power also needs the impedance of the string it travels on, hence the factor \(\Zi2/\Zi1\).</div>
+  </div>
+  <div class="col">
+    <p>So \(\Zc\) has a second job: <b>it converts "how fast the string moves" into "how much power flows"</b>. The same string motion carries more power on a high-impedance string. The figure shows where the energy sits. Switch between a travelling and a standing wave:</p>
+  </div>
+  <div class="fig" id="sim-energy">
+    <canvas aria-label="A wave on a string with its kinetic and potential energy density and its power plotted underneath"></canvas>
+    <div class="controls">
+      <div class="btns" role="group" aria-label="Kind of wave"><button data-ekind="travel">Travelling wave</button><button data-ekind="stand">Standing wave</button></div>
+      <div class="btns"><button id="e-play">Pause</button></div>
+    </div>
+    <div class="readout"><div><span class="lab">power averaged over a period</span><span class="val k-z" id="e-avg"></span></div></div>
+    <p class="say" id="e-say" aria-live="polite"></p>
+  </div>
+  <div class="col">
+    <p><b>Momentum.</b> To first order a string wave carries energy forward but no momentum: every point moves up and down, not along (L09 p.5). <b>Friction</b> (a string in liquid) makes \(k\) complex and the wave decays as \(e^{-\kappa x}\) with \(\kappa\simeq\Gamma/2v\), its power as \(e^{-2\kappa x}\) (L09 p.5–7).</p>
+  </div>
+</section>
+
+<!-- ================= 6. STANDING ================= -->
+<section id="standing">
+  <div class="col">
+    <div class="eyebrow">6 · L10 p.1–5 · <span class="he" lang="he">גלים עומדים</span></div>
+    <h2>Standing waves are impedance at the extremes</h2>
+    <p class="q">What happens when the wave keeps coming and the end reflects all of it?</p>
+    <p>L10 starts with a sentence that ties everything together: "the wall behaves like an impedance on the left that is infinite: full reflection." A wall is \(\Zc=\infty\), so \(\Rc=-1\); a free end is \(\Zc=0\), so \(\Rc=+1\). Send in a steady wave instead of one pulse, and the incoming wave and its echo overlap everywhere. Their sum is a <b>standing wave</b>: a shape that grows and shrinks in place, with points that never move (<b>nodes</b>, <span class="he" lang="he">צמתים</span>).</p>
+    <p>Here the picture follows L10: the wall is on the <em>left</em> at \(x=0\), the string on \(x&gt;0\), and the wave comes in from the right, \(\psiI=A\cos(\omega t+kx+\phi)\). Slide the impedance of the end and watch the dips:</p>
+  </div>
+  <div class="fig" id="sim-standing">
+    <canvas aria-label="A steady wave from the right reflects off an end of adjustable impedance; the sum shows a standing or partly standing wave"></canvas>
+    <div class="controls">
+      <div class="btns" role="group" aria-label="The end"><button data-wend="wall">Wall (Z = ∞)</button><button data-wend="free">Free end (Z = 0)</button></div>
+      <div class="slider"><label for="w-zr">or a string with Z_end / Z_string</label><input id="w-zr" type="range" min="-2" max="2" step="0.01" value="2"><output id="w-zr-out"></output></div>
+    </div>
+    <div class="controls">
+      <label class="chk"><input type="checkbox" id="w-parts" checked> show incident and reflected (dashed)</label>
+      <div class="btns"><button id="w-play">Pause</button></div>
+    </div>
+    <div class="readout">
+      <div><span class="lab">R at the end</span><span class="val k-r" id="w-R"></span></div>
+      <div><span class="lab">largest swing</span><span class="val" id="w-max"></span></div>
+      <div><span class="lab">smallest swing</span><span class="val" id="w-min"></span></div>
+    </div>
+    <p class="say" id="w-say" aria-live="polite"></p>
+    <p class="cap">The grey band is the envelope: how far each point ever swings. With \(|\Rc|=1\) the band pinches to zero at the nodes (red dots).</p>
+  </div>
+  <div class="deriv col">
+    <h4>Derivation: the standing wave at a wall (L10 p.1)</h4>
+    <ol>
+      <li><div class="why">The wall reflects with \(\Rc=-1\), and the echo is \(\Rc\,\psiI(-x,t)\) (section 2).</div>
+        \[\psiR=-A\cos(\omega t-kx+\phi)\]</li>
+      <li><div class="why">Add them, using \(\cos a-\cos b=-2\sin\tfrac{a+b}2\sin\tfrac{a-b}2\).</div>
+        \[\psi=A\cos(\omega t+kx+\phi)-A\cos(\omega t-kx+\phi)=-2A\sin(\omega t+\phi)\,\sin kx\]</li>
+      <li><div class="why">Time and space have separated: \(\sin kx\) fixes the shape, \(\sin(\omega t+\phi)\) only scales it. Points with \(\sin kx=0\) never move.</div>
+        \[\boxed{\ \text{nodes at } kx=n\pi,\ \text{spaced } \lambda/2\ }\]</li>
+    </ol>
+    <div class="check">Check: \(\psi(0,t)=0\) for all \(t\), as a wall demands ✓. For a free end (\(\Rc=+1\)) the same steps give \(2A\cos(\omega t+\phi)\cos kx\): an antinode at the end, zero slope there (L10 p.2–3).</div>
+  </div>
+  <div class="col">
+    <h3>Two walls: only some wavelengths fit (L10 p.3–4)</h3>
+    <p>A string of length \(L\) tied at both ends needs a node at \(x=L\) as well: \(\sin kL=0\). So \(k\) can no longer be anything:</p>
+    \[k_n=\frac{n\pi}{L},\qquad \lambda_n=\frac{2L}{n},\qquad \nu_n=\frac{n\,v}{2L},\qquad \psi(x,t)=\sum_n B_n\sin(\omega_nt+\phi_n)\sin k_nx\]
+    <p>These are the <b>normal modes</b>. Every frequency is a whole multiple of the lowest one, \(\nu_1=v/2L\). Any motion of the string is a sum of modes, with \(B_n,\phi_n\) fixed by the starting shape and velocity.</p>
+  </div>
+  <div class="fig" id="sim-modes">
+    <canvas aria-label="Normal mode n of a string fixed at both ends, with nodes marked"></canvas>
+    <div class="controls">
+      <div class="btns" role="group" aria-label="Mode number"><button data-mode="1">n = 1</button><button data-mode="2">n = 2</button><button data-mode="3">n = 3</button><button data-mode="4">n = 4</button><button data-mode="5">n = 5</button><button data-mode="6">n = 6</button></div>
+      <div class="btns"><button id="m-play">Pause</button></div>
+    </div>
+    <div class="readout">
+      <div><span class="lab">wavelength λₙ</span><span class="val" id="m-lam"></span></div>
+      <div><span class="lab">frequency νₙ</span><span class="val" id="m-nu"></span></div>
+      <div><span class="lab">nodes</span><span class="val" id="m-nodes"></span></div>
+    </div>
+  </div>
+  <div class="col">
+    <p><b>No net power in a standing wave</b> (L10 p.5). With \(\psi=A\sin\omega t\sin kx\), the power \(P=-\Ten\dx\psi\dt\psi\) contains \(\sin\omega t\cos\omega t=\tfrac12\sin2\omega t\), which averages to zero over a period. At any instant energy moves, but it only sloshes back and forth between neighbouring nodes. Switch the energy figure in section 5 to "standing" to see it.</p>
+  </div>
+</section>
+
+<!-- ================= 7. PACKETS ================= -->
+<section id="packets">
+  <div class="col">
+    <div class="eyebrow">7 · L12 p.2–4, p.8–9 · <span class="he" lang="he">חבורות גלים</span></div>
+    <h2>Wave packets at a junction</h2>
+    <p class="q">A real pulse is made of many frequencies. Why does it keep its shape when it reflects?</p>
+    <p>A <b>wave packet</b> is a sum of many single-frequency waves. Add two and you get beats: a fast carrier inside a slow envelope. Add many, with weights that fall off smoothly around a central wave number \(k_0\), and all the bumps but one cancel: a single packet, a carrier \(\cos k_0x\) inside an envelope \(h(x)\) (L12 writes \(\psi(x,0)=h(x)e^{ik_0x}\)). Build one:</p>
+  </div>
+  <div class="fig" id="sim-packet">
+    <canvas aria-label="Adding single-frequency waves: one wave, beats from two, and a localized packet from many"></canvas>
+    <div class="controls">
+      <div class="slider"><label for="p-n">number of waves added</label><input id="p-n" type="range" min="1" max="41" step="1" value="2"><output id="p-n-out"></output></div>
+      <div class="btns"><button data-send-packet>Send a packet into the junction</button></div>
+    </div>
+    <p class="say" id="p-say" aria-live="polite"></p>
+  </div>
+  <div class="col">
+    <p>Now the link to impedance. At a junction, each single-frequency part of the packet reflects with its own \(\Rc\). On a string \(\Zc=\sqrt{\Ten\rho}\) contains no frequency at all, so <b>every part gets the same \(\Rc\) and the same \(\Tc\)</b>. The echo is therefore the whole packet, mirrored and scaled, and the transmitted packet is the whole packet, scaled and stretched by \(v_2/v_1\). That is exactly why L07 could write \(\psiR=\Rc\,\psiI(-x,t)\) for <em>any</em> shape. On a string every part also travels at the same speed \(v\) (\(\omega=vk\)), so the packet does not spread out; packets that do spread need dispersion (L11–L12).</p>
+    <p>Press "Send a packet into the junction", or choose "Wave packet" in the top figure: the carrier wiggles inside the echo flip together when \(\Rc&lt;0\), and the transmitted packet keeps the same number of wiggles while it gets wider or narrower.</p>
+    <p><span class="mine">mine, a look ahead</span> When the impedance does depend on frequency (a cable with resistance, \(\Zc=\sqrt{(R+i\omega L)/(i\omega C)}\), recitation 5), different parts reflect differently and the echo is distorted.</p>
+  </div>
+</section>
+
+<!-- ================= 8. MEDIA ================= -->
+<section id="media">
+  <div class="col">
+    <div class="eyebrow">8 · L08 p.4–6, recitation 5, Crawford 4.4</div>
+    <h2>One idea, many media</h2>
+    <p class="q">Is impedance only about strings?</p>
+    <p>No. Every wave has a "push" quantity and a "motion" quantity, and \(\Zc\) is their ratio. Once you know a medium's \(\Zc\), every result on this page applies unchanged.</p>
+  </div>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Medium</th><th>push (force-like)</th><th>motion (velocity-like)</th><th>impedance</th><th>matched when</th></tr></thead>
+    <tbody>
+      <tr><td>string (L08)</td><td>vertical force \(F_y\)</td><td>\(\vy\)</td><td>\(\Zc=\sqrt{\Ten\rho}\)</td><td>\(\Zi1=\Zi2\)</td></tr>
+      <tr><td>circuit (L08 p.4–5)</td><td>voltage \(V\)</td><td>current \(I\)</td><td>resistance \(R=V/I\)</td><td>\(R_L=R_S\)</td></tr>
+      <tr><td>cable (recitation 5)</td><td>voltage \(V\)</td><td>current \(I\)</td><td>\(Z_0=\sqrt{L/C}\) (per-length \(L\), \(C\))</td><td>equal \(Z_0\)</td></tr>
+      <tr><td>sound (Crawford 4.4)</td><td>pressure</td><td>air velocity</td><td>\(\sqrt{\gamma p_0\rho_0}\) per area</td><td>equal \(\Zc\), or a horn between</td></tr>
+      <tr><td>light (L15, ahead of class)</td><td>electric field</td><td>magnetic field</td><td>\(\sqrt{\mu/\varepsilon}\propto1/n\)</td><td>equal \(n\)</td></tr>
+    </tbody>
+  </table></div>
+  <div class="col">
+    <p>The pattern in the impedance column: always \(\sqrt{\text{stiffness}\times\text{inertia}}\). For the cable, \(L\) plays the inertia (like \(\rho\)) and \(1/C\) the stiffness (like \(\Ten\)): \(\sqrt{L\cdot(1/C)}=\sqrt{L/C}\). The speed is the other combination, \(\sqrt{\text{stiffness}/\text{inertia}}\): \(v=\sqrt{\Ten/\rho}\) and \(c=1/\sqrt{LC}\).</p>
+    <p><b>A cable at a short circuit</b> (\(Z_2=0\)) is the free end of the string: the current (velocity-like) doubles, while the voltage (force-like) reflects with \(-\Rc=-1\) and is zero at the short. No voltage, no power delivered. This is the circuit version of the trap in section 4.</p>
+  </div>
+</section>
+
+<!-- ================= CHECK ================= -->
+<section id="check">
+  <div class="col">
+    <h2>Check yourself</h2>
+    <p class="q">No numbers, just the ideas. Answer in your head, then open.</p>
+    <div class="qa">
+      <details><summary>A pulse goes from a light string to a heavy one with the same tension. Is the echo upright or upside down?</summary><div class="ans">Upside down. Heavy means larger \(\Zc=\sqrt{\Ten\rho}\), so \(\Zi2&gt;\Zi1\) and \(\Rc=\frac{\Zi1-\Zi2}{\Zi1+\Zi2}&lt;0\).</div></details>
+      <details><summary>\(\Tc\) can be bigger than 1. Doesn't that break energy conservation?</summary><div class="ans">No. \(\Tc\) compares heights, not energy. The power fraction is \(\TE=\frac{\Zi2}{\Zi1}\Tc^2\le1\). A tall pulse on a low-impedance string carries little power.</div></details>
+      <details><summary>Can two strings with different wave speeds be joined without any echo?</summary><div class="ans">Yes, if their impedances are equal. Example: three times the tension and a third of the density gives the same \(\Zc\) but three times the speed. The junction feels only \(\Zc\).</div></details>
+      <details><summary>Why doesn't a lower \(\Zi2\) pass more power, "since it resists less"?</summary><div class="ans">Power is force times velocity, and the force on the knot is \(\Zi2\vy\). A low-impedance string barely pushes, so little power goes in; at \(\Zi2=0\) none. Maximum power through is at \(\Zi2=\Zi1\).</div></details>
+      <details><summary>What is a wall, in impedance language? And a free end?</summary><div class="ans">Wall: \(\Zc=\infty\), \(\Rc=-1\), a node (no motion) at the wall. Free end: \(\Zc=0\), \(\Rc=+1\), an antinode, with zero slope at the end.</div></details>
+      <details><summary>Doubling the tension of a string (same density) changes its impedance and its speed by what?</summary><div class="ans">Both by \(\sqrt2\): \(\Zc=\sqrt{\Ten\rho}\) and \(v=\sqrt{\Ten/\rho}\).</div></details>
+      <details><summary>"The rest of the string is a damper with \(F_y=-\Zc\vy\)." When is this false?</summary><div class="ans">When something comes back along the string: a second junction or a fixed end beyond. The derivation used a wave moving only away. With waves both ways (a standing wave) the force is no longer proportional to the velocity.</div></details>
+      <details><summary>If the string acts like a damper, why doesn't it heat up?</summary><div class="ans">It doesn't dissipate the energy, it carries it away as a wave. A damper turns the work into heat; the string passes it on to whatever is further along.</div></details>
+      <details><summary>What is the time-averaged power in a standing wave, and why?</summary><div class="ans">Zero. It is two equal waves going opposite ways, so their powers cancel; directly, \(P\propto\sin\omega t\cos\omega t\), which averages to zero. Energy sloshes between nodes but never crosses one.</div></details>
+      <details><summary>A wave packet hits a string junction. Does its shape change?</summary><div class="ans">Only by scaling (and mirroring for the echo). The transmitted packet is stretched in space by \(v_2/v_1\) but lasts the same time. On a string \(\Zc\) has no frequency in it, so every frequency in the packet gets the same \(\Rc\) and \(\Tc\).</div></details>
+      <details><summary>What does ultrasound gel do?</summary><div class="ans">It removes the air between the probe and the skin. Air has a very different impedance from both, so it would reflect almost everything. With the gel the step is small and most of the sound goes in (L08 p.6).</div></details>
+      <details><summary>A wave hits a junction. Which stays the same on both sides: frequency, wavelength or speed?</summary><div class="ans">The frequency. The knot moves at one frequency, and it drives string 2 at that frequency. The speed changes to \(v_2\), so the wavelength changes to \(v_2/\nu\).</div></details>
+    </div>
+  </div>
+</section>
+
+<!-- ================= RECAP ================= -->
+<section id="recap">
+  <div class="col">
+    <h2>One-screen recap</h2>
+    <p class="q">Each formula with the sentence that goes with it.</p>
+  </div>
+  <div class="recap">
+    <div>\[\Zc=\frac{\Ten}{v}=\sqrt{\Ten\rho}=\rho v\]<p class="plain">How hard a string is to shake. Grows with tension and with density.</p></div>
+    <div>\[F_y=-\Zc\,\vy\]<p class="plain">The string beyond a point acts like a damper of constant \(\Zc\), while nothing comes back.</p></div>
+    <div>\[\Rc=\frac{\Zi1-\Zi2}{\Zi1+\Zi2},\quad \Tc=\frac{2\Zi1}{\Zi1+\Zi2}\]<p class="plain">Heights of the echo and of the pulse that goes on. \(1+\Rc=\Tc\).</p></div>
+    <div>\[\psiR=\Rc\,\psiI(-x,t),\quad \psiT=\Tc\,\psiI\!\left(\tfrac{v_1}{v_2}x,t\right)\]<p class="plain">Any shape: the echo is the mirror image; the pulse that goes on is wider by \(v_2/v_1\).</p></div>
+    <div>\[P=\Zc(\dt\psi)^2=v\,\mathcal E\]<p class="plain">Power of a right-moving wave. Kinetic = potential energy.</p></div>
+    <div>\[\RE=\Rc^2,\quad \TE=\frac{\Zi2}{\Zi1}\Tc^2,\quad \RE+\TE=1\]<p class="plain">Shares of the power. \(\Tc^2\) alone is not the power share.</p></div>
+    <div>\[\Zi1=\Zi2\ \Rightarrow\ \Rc=0\]<p class="plain">Matching: the junction disappears. Lower \(\Zi2\) is not better.</p></div>
+    <div>\[\text{wall } \Zc=\infty:\ \Rc=-1;\quad \text{free } \Zc=0:\ \Rc=+1\]<p class="plain">Total reflection. With a steady wave: a standing wave, nodes every \(\lambda/2\), no net power.</p></div>
+    <div>\[k_n=\frac{n\pi}{L},\quad \nu_n=\frac{nv}{2L}\]<p class="plain">Two fixed ends allow only whole numbers of half wavelengths.</p></div>
+  </div>
+</section>
+
+<footer class="col">
+  <p>Built from the lecturer's notes 07–10 and 12 (page numbers in the text), recitation 5, and Crawford, <i>Waves</i>, sections 4.4 and 5.2–5.3. Marks "mine" are additions that are not in the notes. Letters follow the lecture; the colours are this page's own.</p>
+</footer>
+</div>
+
+<script src="fd-core.js" charset="utf-8"></script>
+<script src="impedance.js" charset="utf-8"></script>

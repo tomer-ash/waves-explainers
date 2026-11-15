@@ -1,0 +1,888 @@
+/* Impedance on a String: the interactive figures.
+   Every widget has its own init in a try/catch, so one failure does not blank the page.
+   Physics conventions follow the lecture notes (L07-L10); see the page text. */
+(function () {
+  'use strict';
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const TAU = Math.PI * 2;
+
+  function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+  function pal() {
+    return {
+      bg: cssVar('--surface'), ink: cssVar('--ink'), muted: cssVar('--muted'), line: cssVar('--line'),
+      soft: cssVar('--soft'), inc: cssVar('--c-inc'), r: cssVar('--c-r'), t: cssVar('--c-t'),
+      z: cssVar('--c-z'), ten: cssVar('--c-ten'), vy: cssVar('--c-vy'), ghost: cssVar('--ghost'),
+      mono: cssVar('--font-mono') || 'monospace', sans: cssVar('--font-body') || 'sans-serif'
+    };
+  }
+
+  function fmt(x, d = 2) {
+    if (x === Infinity) return '∞';
+    if (x === -Infinity) return '−∞';
+    if (Number.isNaN(x)) return '—';
+    const a = Math.abs(x);
+    let s;
+    if (a >= 100) s = x.toFixed(0);
+    else if (a >= 10) s = x.toFixed(1);
+    else s = x.toFixed(d);
+    return s.replace('-', '−');
+  }
+  function pct(x) { return (100 * x).toFixed(x > 0.995 || x < 0.005 ? 0 : 1) + '%'; }
+
+  /* ---------- canvas + animation plumbing ---------- */
+  function setupCanvas(cv, heightOf) {
+    const ctx = cv.getContext('2d');
+    const S = { cv, ctx, w: 0, h: 0 };
+    function resize() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const w = Math.max(10, cv.clientWidth);
+      const h = Math.round(heightOf(w));
+      if (cv.style.height !== h + 'px') cv.style.height = h + 'px';
+      cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      S.w = w; S.h = h;
+    }
+    resize();
+    if ('ResizeObserver' in window) new ResizeObserver(() => { if (Math.abs(cv.clientWidth - S.w) > 0.5) resize(); }).observe(cv);
+    else window.addEventListener('resize', resize);
+    return S;
+  }
+  const widgets = [];
+  function addWidget(el, tick) {
+    const w = { el, tick, visible: true, dead: false };
+    widgets.push(w);
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver((es) => es.forEach((e) => { w.visible = e.isIntersecting; })).observe(el);
+    }
+    return w;
+  }
+  let lastT = performance.now();
+  function loop(now) {
+    const dt = Math.min(0.05, Math.max(0, (now - lastT) / 1000));
+    lastT = now;
+    for (const w of widgets) {
+      if (!w.visible || w.dead) continue;
+      try { w.tick(dt); } catch (e) { w.dead = true; console.error(e); }
+    }
+    requestAnimationFrame(loop);
+  }
+  function safeInit(name, fn) {
+    try { fn(); } catch (e) {
+      console.error('widget ' + name + ' failed', e);
+      const box = document.getElementById(name);
+      if (box) box.insertAdjacentHTML('beforeend', '<p class="widget-error">This figure could not start in your browser. The text around it still holds.</p>');
+    }
+  }
+  function playButton(btn, get, set) {
+    const show = () => { btn.textContent = get() ? 'Pause' : 'Play'; btn.setAttribute('aria-pressed', String(get())); };
+    btn.addEventListener('click', () => { set(!get()); show(); });
+    show();
+    return show;
+  }
+
+  /* drawing helpers */
+  function line(ctx, pts, color, width, dash) {
+    ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = width; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    if (dash) ctx.setLineDash(dash);
+    ctx.beginPath();
+    let pen = false;
+    for (const p of pts) {
+      if (p == null) { pen = false; continue; }
+      if (!pen) { ctx.moveTo(p[0], p[1]); pen = true; } else ctx.lineTo(p[0], p[1]);
+    }
+    ctx.stroke(); ctx.restore();
+  }
+  function arrow(ctx, x1, y1, x2, y2, color, width = 2.5) {
+    const len = Math.hypot(x2 - x1, y2 - y1);
+    if (len < 3) return;
+    const a = Math.atan2(y2 - y1, x2 - x1), hs = Math.min(9, len * 0.5);
+    ctx.save(); ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = width; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2 - hs * 0.6 * Math.cos(a), y2 - hs * 0.6 * Math.sin(a)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - hs * Math.cos(a - 0.45), y2 - hs * Math.sin(a - 0.45));
+    ctx.lineTo(x2 - hs * Math.cos(a + 0.45), y2 - hs * Math.sin(a + 0.45));
+    ctx.closePath(); ctx.fill(); ctx.restore();
+  }
+  function label(ctx, text, x, y, color, opts = {}) {
+    const P = pal();
+    ctx.save();
+    ctx.font = (opts.weight || '600') + ' ' + (opts.size || 12) + 'px ' + (opts.mono ? P.mono : P.sans);
+    ctx.fillStyle = color; ctx.textAlign = opts.align || 'center'; ctx.textBaseline = opts.base || 'middle';
+    if (opts.halo) { ctx.lineWidth = 4; ctx.strokeStyle = P.bg; ctx.lineJoin = 'round'; ctx.strokeText(text, x, y); }
+    ctx.fillText(text, x, y); ctx.restore();
+  }
+  function hatchWall(ctx, x, y0, y1, side, color) { // side -1: hatch to the left
+    ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(x, y0); ctx.lineTo(x, y1); ctx.stroke();
+    ctx.lineWidth = 1.2;
+    for (let y = y0 + 4; y < y1; y += 9) { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + side * 9, y + 9); ctx.stroke(); }
+    ctx.restore();
+  }
+  function rodAndRing(ctx, x, y0, y1, yRing, color) {
+    ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.setLineDash([2, 3]);
+    ctx.beginPath(); ctx.moveTo(x, y0); ctx.lineTo(x, y1); ctx.stroke(); ctx.setLineDash([]);
+    ctx.lineWidth = 2.2; ctx.beginPath(); ctx.ellipse(x, yRing, 4, 7, 0, 0, TAU); ctx.stroke(); ctx.restore();
+  }
+  function logSlider(el) { return Math.pow(10, parseFloat(el.value)); }
+
+  /* ============ 1. The junction simulator (L07, L08, L09) ============ */
+  const junctionAPI = {};
+  function initJunction() {
+    const box = $('#sim-junction');
+    const S = setupCanvas($('canvas', box), (w) => Math.max(230, Math.min(330, w * 0.4)));
+    const st = { rhoR: 4, tenR: 1, mode: 'string', shape: 'bump', t: 0, playing: !reduceMotion, parts: true, ghost: false };
+    const v1 = 0.5, x0 = 0.72, t0 = x0 / v1;
+    if (!st.playing) st.t = t0 + 0.85;
+    const rho = $('#j-rho'), ten = $('#j-ten');
+
+    function P() {
+      if (st.mode === 'wall') return { Zr: Infinity, vr: 0, R: -1, T: 0, RE: 1, TE: 0 };
+      if (st.mode === 'free') return { Zr: 0, vr: Infinity, R: 1, T: 2, RE: 1, TE: 0 };
+      const Zr = Math.sqrt(st.rhoR * st.tenR), vr = Math.sqrt(st.tenR / st.rhoR);
+      const R = (1 - Zr) / (1 + Zr), T = 2 / (1 + Zr);
+      return { Zr, vr, R, T, RE: R * R, TE: Zr * T * T };
+    }
+    function f(s) {
+      if (st.shape === 'bump') return Math.exp(-((s / 0.16) ** 2));
+      return Math.exp(-((s / 0.34) ** 2)) * Math.cos(TAU * 3.0 * s);
+    }
+    function readouts() {
+      const p = P();
+      $('#j-zr').textContent = fmt(p.Zr);
+      $('#j-vr').textContent = st.mode === 'string' ? fmt(p.vr) : (st.mode === 'wall' ? '0' : '∞');
+      $('#j-R').textContent = fmt(p.R);
+      $('#j-T').textContent = fmt(p.T);
+      $('#j-RE').textContent = pct(p.RE);
+      $('#j-TE').textContent = pct(p.TE);
+      $('#j-bar-r').style.width = (100 * p.RE) + '%';
+      $('#j-bar-t').style.width = (100 * p.TE) + '%';
+      $('#j-rho-out').textContent = st.mode === 'string' ? '× ' + fmt(st.rhoR) : (st.mode === 'wall' ? '∞ (wall)' : '0 (no string)');
+      $('#j-ten-out').textContent = st.mode === 'string' ? '× ' + fmt(st.tenR) : '—';
+      let say;
+      if (st.mode === 'wall') say = 'Wall: impedance Z₂ = ∞. Everything comes back, upside down (R = −1).';
+      else if (st.mode === 'free') say = 'Free end: impedance Z₂ = 0. Everything comes back, upright (R = +1). The end swings to twice the height.';
+      else if (Math.abs(p.Zr - 1) < 0.02) say = Math.abs(p.vr - 1) < 0.02 ? 'Same string on both sides: no boundary at all.' : 'Matched: Z₂ = Z₁, so nothing reflects, even though the speed changes (watch the width).';
+      else if (p.Zr > 1) say = 'Z₂ > Z₁: the second string is harder to shake. The reflection is inverted (R < 0) and the transmitted pulse is smaller (T < 1).';
+      else say = 'Z₂ < Z₁: the second string is easier to shake. The reflection is upright (R > 0) and the transmitted pulse is taller (T > 1), yet it carries less than all the power.';
+      $('#j-say').textContent = say;
+      $$('[data-preset]', box).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.preset === st.preset)));
+      $$('[data-shape]', box).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.shape === st.shape)));
+    }
+    const presets = {
+      wall: { mode: 'wall' }, heavy: { rhoR: 4, tenR: 1 }, same: { rhoR: 1, tenR: 1 },
+      matched: { rhoR: 1 / 3, tenR: 3 }, light: { rhoR: 0.25, tenR: 1 }, free: { mode: 'free' }
+    };
+    function applyPreset(name) {
+      const p = presets[name];
+      st.preset = name;
+      if (p.mode) st.mode = p.mode;
+      else { st.mode = 'string'; st.rhoR = p.rhoR; st.tenR = p.tenR; rho.value = Math.log10(p.rhoR); ten.value = Math.log10(p.tenR); }
+      st.t = 0; readouts();
+    }
+    $$('[data-preset]', box).forEach((b) => b.addEventListener('click', () => applyPreset(b.dataset.preset)));
+    $$('[data-shape]', box).forEach((b) => b.addEventListener('click', () => { st.shape = b.dataset.shape; st.t = 0; readouts(); }));
+    rho.addEventListener('input', () => { st.mode = 'string'; st.preset = null; st.rhoR = logSlider(rho); readouts(); });
+    ten.addEventListener('input', () => { st.mode = 'string'; st.preset = null; st.tenR = logSlider(ten); readouts(); });
+    $('#j-parts').addEventListener('change', (e) => { st.parts = e.target.checked; });
+    $('#j-ghost').addEventListener('change', (e) => { st.ghost = e.target.checked; });
+    const showPlay = playButton($('#j-play'), () => st.playing, (v) => { st.playing = v; });
+    $('#j-restart').addEventListener('click', () => { st.t = 0; if (!st.playing) { st.playing = true; showPlay(); } });
+    junctionAPI.setShape = (s) => { st.shape = s; st.t = 0; st.playing = true; showPlay(); readouts(); };
+    junctionAPI.preset = (n) => { applyPreset(n); st.playing = true; showPlay(); };
+    st.preset = 'heavy';
+    rho.value = Math.log10(st.rhoR); ten.value = Math.log10(st.tenR);
+    readouts();
+
+    function draw() {
+      const { ctx, w, h } = S, C = pal(), p = P();
+      ctx.clearRect(0, 0, w, h);
+      const pad = 18, y0 = h * 0.56, A = h * 0.2;
+      const X = (x) => pad + ((x + 1) / 2) * (w - 2 * pad);
+      const Y = (psi) => y0 - A * psi;
+      const v2 = p.vr * v1, tt = st.t - t0;
+      // axis
+      line(ctx, [[X(-1), y0], [X(1), y0]], C.line, 1, [3, 4]);
+      const n = Math.max(160, Math.round(w / 1.5));
+      const inc = [], ref = [], tot = [], tra = [], gh1 = [], gh2 = [];
+      for (let i = 0; i <= n; i++) {
+        const x = -1 + i / n;              // left half
+        const a = f(tt - x / v1), b = p.R * f(tt + x / v1);
+        inc.push([X(x), Y(a)]); ref.push([X(x), Y(b)]); tot.push([X(x), Y(a + b)]);
+        if (st.ghost) gh2.push([X(x), Y(f(tt + x / v1))]);
+      }
+      const totR = [];
+      if (st.mode === 'string') {
+        for (let i = 0; i <= n; i++) {
+          const x = i / n;
+          const c = p.T * f(tt - x / v2);
+          tra.push([X(x), Y(c)]); totR.push([X(x), Y(c)]);
+        }
+      }
+      if (st.ghost) for (let i = 0; i <= n; i++) { const x = i / n; gh1.push([X(x), Y(f(tt - x / v1))]); }
+      // strings (thicker line = denser string)
+      const lw1 = 2.6, lw2 = Math.max(1.2, Math.min(8, 2.6 * Math.pow(st.rhoR, 0.33)));
+      if (st.ghost) { line(ctx, gh1, C.ghost, 1.6, [6, 5]); line(ctx, gh2, C.ghost, 1.6, [1.5, 4]); }
+      line(ctx, tot, C.ink, lw1);
+      if (st.mode === 'string') line(ctx, totR, C.ink, lw2);
+      if (st.parts) {
+        line(ctx, inc, C.inc, 1.6, [5, 4]);
+        line(ctx, ref, C.r, 1.6, [5, 4]);
+        if (st.mode === 'string') line(ctx, tra, C.t, 1.6, [5, 4]);
+      }
+      // boundary
+      const yJ = Y(f(tt) * (1 + p.R));
+      if (st.mode === 'wall') hatchWall(ctx, X(0), h * 0.12, h * 0.95, 1, C.muted);
+      else if (st.mode === 'free') rodAndRing(ctx, X(0), h * 0.08, h * 0.98, yJ, C.muted);
+      else {
+        ctx.save(); ctx.fillStyle = C.bg; ctx.strokeStyle = C.ink; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(X(0), yJ, 4.5, 0, TAU); ctx.fill(); ctx.stroke(); ctx.restore();
+      }
+      // region labels
+      const zr = st.mode === 'wall' ? '∞' : st.mode === 'free' ? '0' : fmt(p.Zr);
+      label(ctx, 'string 1 · impedance Z₁', X(-0.5), h - 12, C.muted, { size: 12, weight: '600' });
+      label(ctx, st.mode === 'wall' ? 'wall · Z₂ = ∞' : st.mode === 'free' ? 'nothing · Z₂ = 0' : 'string 2 · Z₂ = ' + zr + ' Z₁', X(0.5), h - 12, C.muted, { size: 12, weight: '600' });
+      // pulse labels follow the peaks
+      const xi = v1 * tt, xr = -v1 * tt, xt = v2 * tt;
+      const top = h * 0.1;
+      const narrow = w < 560, gap = narrow ? 0.4 : 0.15;
+      if (xi > -0.98 && xi < -0.06) label(ctx, 'incident →', X(xi), top, C.inc, { halo: true });
+      if (tt > 0.15 && xr > -0.95 && xr < -gap && Math.abs(p.R) > 0.02) label(ctx, narrow ? '← R×' + fmt(p.R) : '← reflected ×' + fmt(p.R), X(xr), top, C.r, { halo: true });
+      if (st.mode === 'string' && tt > 0.15 && xt < 0.92 && p.T > 0.02) label(ctx, narrow ? 'T×' + fmt(p.T) + ' →' : 'transmitted ×' + fmt(p.T) + ' →', X(Math.max(narrow ? 0.3 : 0.16, xt)), narrow ? top + 16 : top, C.t, { halo: true });
+      if (st.mode === 'free' && tt > -0.25 && tt < 0.25) label(ctx, 'end swings to 2×', X(0.17), top, C.muted, { halo: true, size: 11 });
+    }
+    addWidget(box, (dt) => {
+      if (st.playing) {
+        st.t += dt;
+        if (st.t > t0 + 1 / v1 + 0.7) st.t = 0;
+      }
+      draw();
+    });
+  }
+
+  /* ============ 2. Force balance on the massless junction (L07 p.2-3, L08 p.1) ============ */
+  function initBalance() {
+    const box = $('#sim-balance');
+    const S = setupCanvas($('canvas', box), (w) => Math.max(200, Math.min(260, w * 0.36)));
+    const s2 = $('#b-slope'), t2 = $('#b-ten');
+    function draw() {
+      const { ctx, w, h } = S, C = pal();
+      ctx.clearRect(0, 0, w, h);
+      const slope1 = 0.35, slope2 = parseFloat(s2.value), T1 = 1, T2 = logSlider(t2);
+      $('#b-slope-out').textContent = fmt(slope2);
+      $('#b-ten-out').textContent = '× ' + fmt(T2);
+      const cx = w / 2, cy = h * 0.55, L = Math.min(w * 0.42, 260);
+      // strings
+      const a1 = Math.atan(slope1), a2 = Math.atan(slope2);
+      const lx = cx - L * Math.cos(a1), ly = cy + L * Math.sin(a1); // left string goes down-left for positive slope
+      const L2 = Math.min(L, (Math.abs(Math.sin(a2)) > 1e-3 ? (a2 > 0 ? cy - 40 : h - 22 - cy) / Math.abs(Math.sin(a2)) : L));
+      const rx = cx + L2 * Math.cos(a2), ry = cy - L2 * Math.sin(a2);
+      line(ctx, [[lx, ly], [cx, cy]], C.ink, 2.6);
+      line(ctx, [[cx, cy], [rx, ry]], C.ink, 2.6 + 1.2 * Math.log10(T2 + 1));
+      // vertical pulls: left string pulls down-left: F_y,left = -T1 sin a1; right pulls up-right: +T2 sin a2
+      // small slopes, as in the lecture: vertical pull = tension x slope
+      const F1 = -T1 * slope1, F2 = T2 * slope2, net = F1 + F2;
+      const k = h * 0.4, cl = (d) => Math.max(-h * 0.36, Math.min(h * 0.36, d));
+      arrow(ctx, cx - 16, cy, cx - 16, cy - cl(k * F1), C.ten, 2.5);
+      arrow(ctx, cx + 16, cy, cx + 16, cy - cl(k * F2), C.ten, 2.5);
+      label(ctx, 'pull of string 1', cx - 22, cy - cl(k * F1) + (F1 < 0 ? 12 : -12), C.ten, { align: 'right', size: 11, halo: true });
+      label(ctx, 'pull of string 2', cx + 22, cy - cl(k * F2) + (F2 < 0 ? 12 : -12), C.ten, { align: 'left', size: 11, halo: true });
+      ctx.save(); ctx.fillStyle = C.bg; ctx.strokeStyle = C.ink; ctx.lineWidth = 2.2;
+      ctx.beginPath(); ctx.arc(cx, cy, 6, 0, TAU); ctx.fill(); ctx.stroke(); ctx.restore();
+      const ok = Math.abs(net) < 0.02;
+      if (!ok) arrow(ctx, cx, cy - 10 * Math.sign(net), cx, cy - 10 * Math.sign(net) - cl(k * 1.2 * net), C.r, 3.5);
+      label(ctx, ok ? 'net force 0: balanced' : 'net force on a massless point: impossible', cx, 16, ok ? C.t : C.r, { size: 13, weight: '700', halo: true });
+      label(ctx, 'string 1 (tension T₁, slope 0.35)', lx + 6, ly + 14, C.muted, { align: 'left', size: 11, halo: true });
+      label(ctx, 'string 2 (tension T₂)', rx + 4, ry + (a2 > 0 ? 18 : -14), C.muted, { align: 'right', size: 11, halo: true });
+      $('#b-say').textContent = ok
+        ? (Math.abs(T2 - 1) < 0.02 ? 'Equal tensions: balance means equal slopes. That is L07\'s rule, ∂ψ/∂x continuous.' : 'Different tensions: balance needs T₁·slope₁ = T₂·slope₂, so the slopes differ. That is L08\'s rule.')
+        : 'Change the slope until the red arrow vanishes. Needed: slope₂ = T₁·0.35 / T₂ = ' + fmt(0.35 / T2) + '.';
+    }
+    s2.addEventListener('input', draw); t2.addEventListener('input', draw);
+    if ('ResizeObserver' in window) new ResizeObserver(draw).observe($('canvas', box));
+    draw();
+    const mo = new MutationObserver(draw); mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', draw);
+  }
+
+  /* ============ 3. Shake the end: string vs damper (L08 p.2-3, Crawford 4.4) ============ */
+  function initShake() {
+    const box = $('#sim-shake');
+    const cv = $('canvas', box);
+    const S = setupCanvas(cv, (w) => Math.max(300, Math.min(380, w * 0.5)));
+    const tSl = $('#s-ten'), rSl = $('#s-rho');
+    const st = { t: 0, y: 0, yv: 0, drag: false, target: 0, hist: [], fHist: [], playing: !reduceMotion };
+    const SLOW = 100;            // slow motion factor
+    const SPAN = 1.0;            // metres of string on screen
+    function params() {
+      const T = parseFloat(tSl.value), rho = parseFloat(rSl.value) / 1000; // N, kg/m
+      const v = Math.sqrt(T / rho), Z = Math.sqrt(T * rho);
+      return { T, rho, v, Z, vs: v / SLOW };
+    }
+    function readouts() {
+      const p = params();
+      $('#s-ten-out').textContent = p.T.toFixed(0) + ' N';
+      $('#s-rho-out').textContent = (p.rho * 1000).toFixed(0) + ' g/m';
+      $('#s-v').textContent = p.v.toFixed(0) + ' m/s';
+      $('#s-Z').textContent = p.Z.toFixed(3) + ' kg/s';
+    }
+    tSl.addEventListener('input', readouts); rSl.addEventListener('input', readouts); readouts();
+    const showPlay = playButton($('#s-play'), () => st.playing, (v) => { st.playing = v; });
+    const AMP = 0.02; // a full half-lane = 2 cm of real displacement
+    function yAt(tq) { // driver height at an earlier time (interpolated history)
+      const H = st.hist;
+      if (!H.length || tq <= H[0][0]) return 0;
+      for (let i = H.length - 1; i > 0; i--) {
+        if (H[i - 1][0] <= tq) {
+          const [ta, ya] = H[i - 1], [tb, yb] = H[i];
+          return ya + ((yb - ya) * (tq - ta)) / Math.max(1e-6, tb - ta);
+        }
+      }
+      return 0;
+    }
+    function geom() {
+      const { w, h } = S;
+      return { x0: 64, x1: w - 14, lane1: h * 0.2, lane2: h * 0.56, amp: h * 0.09 };
+    }
+    function pointerY(e) {
+      const r = cv.getBoundingClientRect(), g = geom();
+      const y = e.clientY - r.top;
+      return Math.max(-1, Math.min(1, (st.lane - y) / g.amp));
+    }
+    cv.addEventListener('pointerdown', (e) => {
+      const g = geom(), y = e.clientY - cv.getBoundingClientRect().top;
+      st.lane = y < (g.lane1 + g.lane2) / 2 ? g.lane1 : g.lane2; // pick the lane once per drag
+      st.drag = true; cv.setPointerCapture(e.pointerId); st.target = pointerY(e);
+      if (!st.playing) { st.playing = true; showPlay(); }
+    });
+    cv.addEventListener('pointermove', (e) => { if (st.drag) st.target = pointerY(e); });
+    const end = () => { st.drag = false; };
+    cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
+
+    function step(dt) {
+      st.t += dt;
+      let y;
+      if (st.drag) y = st.y + (st.target - st.y) * Math.min(1, dt * 14);
+      else {
+        // auto: a few pulses then a sine, so both shapes are seen
+        const tc = st.t % 9;
+        y = tc < 4 ? 0.85 * Math.exp(-((((tc % 2) - 0.6) / 0.18) ** 2)) * (tc < 2 ? 1 : -1) : 0.7 * Math.sin(TAU * 0.6 * (tc - 4)) * Math.min(1, (tc - 4) / 0.6) * Math.min(1, (9 - tc) / 0.6);
+      }
+      st.yv = dt > 0 ? (y - st.y) / dt : 0;
+      st.y = y;
+      st.hist.push([st.t, y]);
+      const p = params();
+      const keep = SPAN / p.vs + 1;
+      while (st.hist.length > 2 && st.hist[1][0] < st.t - keep) st.hist.shift();
+      // force from the string's own slope at the end vs the damper force
+      const dx = 0.004; // metres
+      const slope = (AMP * (yAt(st.t - dx / p.vs) - y)) / dx; // dpsi/dx at x = 0 (real units)
+      const vyReal = AMP * st.yv * SLOW;                      // m/s
+      const Fstring = p.T * slope;                            // F_y of the string on the hand
+      const Fdamp = -p.Z * vyReal;
+      st.fHist.push([st.t, Fstring, Fdamp]);
+      while (st.fHist.length > 2 && st.fHist[0][0] < st.t - 4) st.fHist.shift();
+      st.last = { Fstring, Fdamp, vyReal, p };
+    }
+    function draw() {
+      const { ctx, w, h } = S, C = pal(), g = geom();
+      ctx.clearRect(0, 0, w, h);
+      const p = params();
+      const L = st.last || { Fstring: 0, Fdamp: 0, vyReal: 0, p };
+      // lane 1: the string
+      line(ctx, [[g.x0, g.lane1], [g.x1, g.lane1]], C.line, 1, [3, 4]);
+      const pts = [];
+      const n = 220;
+      for (let i = 0; i <= n; i++) {
+        const xm = (i / n) * SPAN, px = g.x0 + (i / n) * (g.x1 - g.x0);
+        pts.push([px, g.lane1 - g.amp * yAt(st.t - xm / p.vs)]);
+      }
+      pts[0] = [g.x0, g.lane1 - g.amp * st.y];
+      line(ctx, pts, C.ink, 2.4);
+      // lane 2: a damper under the hand
+      const hy2 = g.lane2 - g.amp * st.y;
+      // rigid rod: the piston moves exactly with the hand inside a fixed oil cylinder
+      const cylTop = g.lane2 + g.amp + 9, cylBot = g.lane2 + 3 * g.amp + 22;
+      ctx.save(); ctx.strokeStyle = C.muted; ctx.lineWidth = 2;
+      ctx.fillStyle = C.soft; ctx.fillRect(g.x0 - 13, cylTop, 26, cylBot - cylTop);
+      ctx.beginPath(); ctx.moveTo(g.x0 - 13, cylTop); ctx.lineTo(g.x0 - 13, cylBot); ctx.lineTo(g.x0 + 13, cylBot); ctx.lineTo(g.x0 + 13, cylTop); ctx.stroke();
+      ctx.restore();
+      const pistonY = hy2 + 2 * g.amp + 15;
+      line(ctx, [[g.x0, hy2], [g.x0, pistonY]], C.ink, 2.4);
+      line(ctx, [[g.x0 - 11, pistonY], [g.x0 + 11, pistonY]], C.ink, 3.4);
+      label(ctx, 'damper in oil: F = −Z·v_y', g.x0 + 22, (cylTop + cylBot) / 2, C.muted, { align: 'left', size: 11 });
+      // hands
+      for (const [yy, lane] of [[g.lane1 - g.amp * st.y, g.lane1], [hy2, g.lane2]]) {
+        ctx.save(); ctx.fillStyle = C.z; ctx.globalAlpha = 0.18; ctx.fillRect(g.x0 - 16, lane - g.amp - 6, 32, 2 * g.amp + 12); ctx.restore();
+        ctx.save(); ctx.fillStyle = C.ink; ctx.fillRect(g.x0 - 9, yy - 6, 18, 12); ctx.restore();
+      }
+      // arrows: velocity of the hand and the force back on it (same in both lanes)
+      const VREF = 9, FREF = 2.6; // m/s and N that draw as one lane-amplitude
+      const vScale = g.amp, fScale = g.amp;
+      const clamp = (x) => Math.max(-1.6, Math.min(1.6, x));
+      for (const [yy] of [[g.lane1 - g.amp * st.y], [hy2]]) {
+        arrow(ctx, g.x0 - 26, yy, g.x0 - 26, yy - vScale * clamp(L.vyReal / VREF), C.vy, 2.4);
+      }
+      const fs = clamp(L.Fstring / FREF) * fScale, fd = clamp(L.Fdamp / FREF) * fScale;
+      arrow(ctx, g.x0 + 24, g.lane1 - g.amp * st.y, g.x0 + 24, g.lane1 - g.amp * st.y - fs, C.z, 2.6);
+      arrow(ctx, g.x0 + 24, hy2, g.x0 + 24, hy2 - fd, C.z, 2.6);
+      label(ctx, 'drag here', g.x0, 12, C.muted, { size: 11 });
+      label(ctx, 'string (slow motion ×100) →', g.x0 + 40, g.lane1 - g.amp - 2, C.muted, { align: 'left', size: 11, halo: true });
+      // force traces, right side of lane 2
+      const px0 = Math.max(g.x0 + 150, w * 0.42), px1 = w - 14, py = g.lane2 - 4, ph = g.amp * 1.1;
+      if (px1 - px0 > 120) {
+        line(ctx, [[px0, py], [px1, py]], C.line, 1);
+        label(ctx, 'force on the hand, last 4 s', px0, py - ph * 1.3 - 12, C.muted, { align: 'left', size: 11 });
+        const H = st.fHist, a = [], b = [];
+        for (const [tq, F1, F2] of H) {
+          const x = px1 - ((st.t - tq) / 4) * (px1 - px0);
+          a.push([x, py - ph * Math.max(-1.3, Math.min(1.3, F1 / FREF))]);
+          b.push([x, py - ph * Math.max(-1.3, Math.min(1.3, F2 / FREF))]);
+        }
+        line(ctx, a, C.z, 3.2);
+        line(ctx, b, C.ink, 1.4, [4, 3]);
+        label(ctx, '— from the string\'s slope', px1, py + ph * 1.3 + 12, C.z, { align: 'right', size: 11 });
+        label(ctx, '- - from the damper', px1, py + ph * 1.3 + 26, C.muted, { align: 'right', size: 11 });
+      }
+      const nz = (x, d) => (Math.abs(x) < 0.5 * Math.pow(10, -d) ? 0 : x).toFixed(d).replace('-', '−');
+      $('#s-vy').textContent = nz(L.vyReal, 2) + ' m/s';
+      $('#s-F').textContent = nz(L.Fstring, 3) + ' N';
+      $('#s-Fd').textContent = nz(L.Fdamp, 3) + ' N';
+    }
+    if (!st.playing) { for (let i = 0; i < 120; i++) step(1 / 60); }
+    addWidget(box, (dt) => { if (st.playing) step(dt); draw(); });
+  }
+
+  /* ============ 4. R, T, R_E, T_E against Z2/Z1 (L08 p.2-4, L09 p.4-5) ============ */
+  function initCurves() {
+    const box = $('#sim-curves');
+    const cv = $('canvas', box);
+    const S = setupCanvas(cv, (w) => Math.max(240, Math.min(320, w * 0.45)));
+    const sl = $('#c-zr');
+    const st = { lr: parseFloat(sl.value) };
+    const lmin = -2, lmax = 2, ymin = -1.1, ymax = 2.15;
+    function geom() { const { w, h } = S; return { l: 44, r: w - 14, t: 14, b: h - 34 }; }
+    const XL = (lr, g) => g.l + ((lr - lmin) / (lmax - lmin)) * (g.r - g.l);
+    const YV = (v, g) => g.b - ((v - ymin) / (ymax - ymin)) * (g.b - g.t);
+    function vals(r) { const R = (1 - r) / (1 + r), T = 2 / (1 + r); return { R, T, RE: R * R, TE: r * T * T }; }
+    function draw() {
+      const { ctx, w, h } = S, C = pal(), g = geom();
+      ctx.clearRect(0, 0, w, h);
+      // grid
+      for (const v of [-1, 0, 1, 2]) {
+        line(ctx, [[g.l, YV(v, g)], [g.r, YV(v, g)]], v === 0 ? C.muted : C.line, 1, v === 0 ? null : [2, 4]);
+        label(ctx, String(v).replace('-', '−'), g.l - 8, YV(v, g), C.muted, { align: 'right', size: 11, mono: true });
+      }
+      for (const [lr, txt] of [[-2, '0.01'], [-1, '0.1'], [0, '1'], [1, '10'], [2, '100']]) {
+        line(ctx, [[XL(lr, g), g.t], [XL(lr, g), g.b]], C.line, 1, [2, 4]);
+        label(ctx, txt, XL(lr, g), g.b + 13, C.muted, { size: 11, mono: true });
+      }
+      label(ctx, 'Z₂ / Z₁ (log scale)', (g.l + g.r) / 2, h - 7, C.muted, { size: 11 });
+      // shade matched line
+      line(ctx, [[XL(0, g), g.t], [XL(0, g), g.b]], C.t, 1.5, [6, 4]);
+      label(ctx, 'matched', XL(0, g) + 5, g.t + 8, C.t, { align: 'left', size: 11 });
+      const n = 240, cR = [], cT = [], cRE = [], cTE = [];
+      for (let i = 0; i <= n; i++) {
+        const lr = lmin + (i / n) * (lmax - lmin), v = vals(Math.pow(10, lr)), x = XL(lr, g);
+        cR.push([x, YV(v.R, g)]); cT.push([x, YV(v.T, g)]); cRE.push([x, YV(v.RE, g)]); cTE.push([x, YV(v.TE, g)]);
+      }
+      line(ctx, cRE, C.r, 2.4, [6, 4]); line(ctx, cTE, C.t, 2.4, [6, 4]);
+      line(ctx, cR, C.r, 2.6); line(ctx, cT, C.t, 2.6);
+      // end labels
+      label(ctx, 'T → 2', XL(-1.75, g), YV(1.86, g) - 10, C.t, { size: 11, halo: true });
+      label(ctx, 'R → +1', XL(-1.75, g), YV(0.95, g) - 12, C.r, { size: 11, halo: true });
+      label(ctx, 'R → −1', XL(1.7, g), YV(-0.95, g) + 12, C.r, { size: 11, halo: true });
+      // marker
+      const r = Math.pow(10, st.lr), v = vals(r), x = XL(st.lr, g);
+      line(ctx, [[x, g.t], [x, g.b]], C.ink, 1.5);
+      for (const [val, col] of [[v.R, C.r], [v.T, C.t], [v.RE, C.r], [v.TE, C.t]]) {
+        ctx.save(); ctx.fillStyle = C.bg; ctx.strokeStyle = col; ctx.lineWidth = 2.2;
+        ctx.beginPath(); ctx.arc(x, YV(val, g), 4.5, 0, TAU); ctx.fill(); ctx.stroke(); ctx.restore();
+      }
+      $('#c-zr-out').textContent = fmt(r);
+      $('#c-R').textContent = fmt(v.R); $('#c-T').textContent = fmt(v.T);
+      $('#c-RE').textContent = pct(v.RE); $('#c-TE').textContent = pct(v.TE);
+      let say;
+      if (Math.abs(st.lr) < 0.02) say = 'Matched. R = 0, T = 1, and all of the power goes through.';
+      else if (st.lr < 0) say = 'The transmitted wave is taller than the incident one (T = ' + fmt(v.T) + '), yet it carries only ' + pct(v.TE) + ' of the power. Low impedance means a weak push on the junction.';
+      else say = 'The second string barely moves (T = ' + fmt(v.T) + ') and the reflection is inverted. ' + pct(v.RE) + ' of the power bounces back.';
+      $('#c-say').textContent = say;
+    }
+    sl.addEventListener('input', () => { st.lr = parseFloat(sl.value); draw(); });
+    let dragging = false;
+    function fromPointer(e) {
+      const r = cv.getBoundingClientRect(), g = geom();
+      const lr = lmin + ((e.clientX - r.left - g.l) / (g.r - g.l)) * (lmax - lmin);
+      st.lr = Math.max(lmin, Math.min(lmax, Math.round(lr * 100) / 100));
+      if (Math.abs(st.lr) < 0.04) st.lr = 0;
+      sl.value = st.lr; draw();
+    }
+    cv.addEventListener('pointerdown', (e) => { dragging = true; cv.setPointerCapture(e.pointerId); fromPointer(e); });
+    cv.addEventListener('pointermove', (e) => { if (dragging) fromPointer(e); });
+    cv.addEventListener('pointerup', () => { dragging = false; });
+    if ('ResizeObserver' in window) new ResizeObserver(draw).observe(cv);
+    new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', draw);
+    draw();
+  }
+
+  /* ============ 5. Load matching in a circuit (L08 p.4-5) ============ */
+  function initCircuit() {
+    const box = $('#sim-circuit');
+    const cv = $('canvas', box);
+    const S = setupCanvas(cv, (w) => Math.max(190, Math.min(240, w * 0.38)));
+    const sl = $('#k-rl');
+    const lmin = -1.3, lmax = 1.3;
+    function draw() {
+      const { ctx, w, h } = S, C = pal();
+      ctx.clearRect(0, 0, w, h);
+      const g = { l: 40, r: w - 14, t: 16, b: h - 32 };
+      const X = (lr) => g.l + ((lr - lmin) / (lmax - lmin)) * (g.r - g.l), Y = (v) => g.b - v * (g.b - g.t);
+      for (const v of [0, 0.5, 1]) { line(ctx, [[g.l, Y(v)], [g.r, Y(v)]], C.line, 1, [2, 4]); label(ctx, String(v), g.l - 8, Y(v), C.muted, { align: 'right', size: 11, mono: true }); }
+      for (const [lr, t] of [[-1, '0.1'], [0, '1'], [1, '10']]) label(ctx, t, X(lr), g.b + 13, C.muted, { size: 11, mono: true });
+      label(ctx, 'R_L / R_S (log scale)', (g.l + g.r) / 2, h - 6, C.muted, { size: 11 });
+      const pts = [];
+      for (let i = 0; i <= 200; i++) { const lr = lmin + (i / 200) * (lmax - lmin), x = Math.pow(10, lr); pts.push([X(lr), Y((4 * x) / ((1 + x) ** 2))]); }
+      line(ctx, pts, C.z, 2.6);
+      const lr = parseFloat(sl.value), x = Math.pow(10, lr), P = (4 * x) / ((1 + x) ** 2);
+      line(ctx, [[X(lr), g.t], [X(lr), g.b]], C.ink, 1.4);
+      ctx.save(); ctx.fillStyle = C.bg; ctx.strokeStyle = C.z; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.arc(X(lr), Y(P), 5, 0, TAU); ctx.fill(); ctx.stroke(); ctx.restore();
+      label(ctx, 'power into the load ÷ its maximum', g.l + 4, g.t - 4, C.muted, { align: 'left', size: 11 });
+      $('#k-rl-out').textContent = fmt(x);
+      $('#k-P').textContent = pct(P);
+    }
+    sl.addEventListener('input', draw);
+    if ('ResizeObserver' in window) new ResizeObserver(draw).observe(cv);
+    new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', draw);
+    draw();
+  }
+
+  /* ============ 6. Horn / taper, numerical (L08 p.6) ============ */
+  function initTaper() {
+    const box = $('#sim-taper');
+    if (!window.FDString) throw new Error('fd-core.js missing');
+    const cv = $('canvas', box);
+    const S = setupCanvas(cv, (w) => Math.max(250, Math.min(320, w * 0.46)));
+    const sl = $('#h-len');
+    // 1 extra unit of string on the left (off screen), so the echo's bounce off the far end
+    // cannot come back into view before the loop restarts at t = 2.1
+    const base = { N: 2601, L: 2.6, v1: 1, ratioZ: 3, xJ: 1.85, x0: 1.55, sigma: 0.05, lambda: 0.06 };
+    const st = { playing: !reduceMotion, sims: null, meas: null };
+    function build() {
+      const lt = parseFloat(sl.value);
+      $('#h-len-out').textContent = lt.toFixed(2) + ' λ';
+      st.sims = [window.FDString.create({ ...base, taper: 0 }), window.FDString.create({ ...base, taper: lt * base.lambda })];
+      st.E0 = st.sims.map((s) => s.energy(0, base.L));
+      st.meas = [null, null];
+    }
+    function measure() {
+      st.sims.forEach((s, i) => {
+        if (st.meas[i] == null && s.t >= 1.5) st.meas[i] = s.energy(0, base.xJ) / st.E0[i];
+      });
+      $('#h-abrupt').textContent = st.meas[0] == null ? 'measuring…' : pct(st.meas[0]);
+      $('#h-taper').textContent = st.meas[1] == null ? 'measuring…' : pct(st.meas[1]);
+    }
+    sl.addEventListener('input', () => { build(); if (!st.playing) runToRest(); });
+    const showPlay = playButton($('#h-play'), () => st.playing, (v) => { st.playing = v; });
+    $('#h-restart').addEventListener('click', () => { build(); st.playing = true; showPlay(); });
+    function runToRest() { st.sims.forEach((s) => s.step(Math.round(1.5 / s.dt))); measure(); }
+    build();
+    if (!st.playing) runToRest();
+    function draw() {
+      const { ctx, w, h } = S, C = pal();
+      ctx.clearRect(0, 0, w, h);
+      const xa = 1.3, xb = 2.55; // visible window
+      const X = (x) => 12 + ((x - xa) / (xb - xa)) * (w - 24);
+      const lanes = [h * 0.28, h * 0.74], A = h * 0.13;
+      st.sims.forEach((s, li) => {
+        const yc = lanes[li], psi = s.psi();
+        // impedance profile as a shaded band
+        const lnr = Math.log(base.ratioZ);
+        ctx.save(); ctx.fillStyle = C.z; ctx.globalAlpha = 0.13; ctx.beginPath();
+        ctx.moveTo(X(xa), yc + A * 1.25);
+        for (let x = xa; x <= xb; x += 0.005) {
+          const j = Math.round(x / s.dx), Zrel = Math.log(Math.sqrt(s.rho[j])) / lnr; // 0 -> 1
+          ctx.lineTo(X(x), yc + A * 1.25 - Zrel * A * 0.55);
+        }
+        ctx.lineTo(X(xb), yc + A * 1.25); ctx.closePath(); ctx.fill(); ctx.restore();
+        const pts = [];
+        const j0 = Math.floor(xa / s.dx), j1 = Math.ceil(xb / s.dx), stepJ = Math.max(1, Math.floor((j1 - j0) / (w * 1.5)));
+        for (let j = j0; j <= j1; j += stepJ) pts.push([X(j * s.dx), yc - A * psi[j]]);
+        line(ctx, pts, C.ink, 1.8);
+        label(ctx, li === 0 ? 'abrupt step, Z jumps ×3' : 'gradual change (horn), same total ×3', X(xa) + 2, yc - A * 1.55, C.muted, { align: 'left', size: 12 });
+        label(ctx, 'Z (shaded)', X(xb) - 2, yc + A * 1.05, C.z, { align: 'right', size: 11 });
+      });
+    }
+    addWidget(box, (dt) => {
+      if (st.playing) {
+        const s0 = st.sims[0];
+        const n = Math.max(1, Math.round((dt * 0.32) / s0.dt));
+        st.sims.forEach((s) => s.step(n));
+        measure();
+        if (s0.t > 2.1) build();
+      }
+      draw();
+    });
+  }
+
+  /* ============ 7. Energy: travelling vs standing (L09 p.1-4, L10 p.5) ============ */
+  function initEnergy() {
+    const box = $('#sim-energy');
+    const S = setupCanvas($('canvas', box), (w) => Math.max(300, Math.min(360, w * 0.52)));
+    const st = { kind: 'travel', t: 0, playing: !reduceMotion };
+    if (!st.playing) st.t = 0.3;
+    $$('[data-ekind]', box).forEach((b) => b.addEventListener('click', () => { st.kind = b.dataset.ekind; upd(); }));
+    function upd() {
+      $$('[data-ekind]', box).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.ekind === st.kind)));
+      $('#e-avg').textContent = st.kind === 'travel' ? '½ Z ω² A² > 0 (to the right)' : '0';
+      $('#e-say').textContent = st.kind === 'travel'
+        ? 'Travelling wave: the kinetic and potential curves lie on top of each other and ride along with the wave. Energy flows at speed v: P = v·ℰ.'
+        : 'Standing wave: the two energies take turns. When the string is flat it is all kinetic (at the antinodes); at full stretch it is all potential (near the nodes). Energy sloshes back and forth but never crosses a node, so the average power is zero.';
+    }
+    upd();
+    playButton($('#e-play'), () => st.playing, (v) => { st.playing = v; });
+    function draw() {
+      const { ctx, w, h } = S, C = pal();
+      ctx.clearRect(0, 0, w, h);
+      const l = 14, r = w - 14, k = TAU * 1.5, om = TAU * 0.4; // units with T = rho = v = 1 (so omega = k for drawing)
+      const yS = h * 0.2, aS = h * 0.13, yE = h * 0.66, aE = h * 0.28, yP = h * 0.9, aP = h * 0.07;
+      const X = (u) => l + u * (r - l);
+      const n = 260, str = [], K = [], U = [], Pw = [];
+      let maxE = 0;
+      const kk = k, ww = kk; // omega = v k with v = 1 for the energy formulas
+      for (let i = 0; i <= n; i++) {
+        const u = i / n, x = u;
+        let psi, pt, px;
+        if (st.kind === 'travel') { const ph = om * st.t * 2.5 - kk * x; psi = Math.cos(ph); pt = -ww * Math.sin(ph); px = kk * Math.sin(ph); }
+        else { psi = Math.sin(om * st.t * 2.5) * Math.sin(kk * x); pt = ww * Math.cos(om * st.t * 2.5) * Math.sin(kk * x); px = kk * Math.sin(om * st.t * 2.5) * Math.cos(kk * x); }
+        const ek = 0.5 * pt * pt, ep = 0.5 * px * px; // rho = T = 1
+        str.push([X(u), yS - aS * psi]); K.push([X(u), ek]); U.push([X(u), ep]); Pw.push([X(u), -px * pt]);
+        maxE = Math.max(maxE, ek, ep);
+      }
+      const norm = 0.5 * ww * ww; // largest single energy density
+      line(ctx, [[l, yS], [r, yS]], C.line, 1, [3, 4]);
+      line(ctx, str, C.ink, 2.4);
+      label(ctx, st.kind === 'travel' ? 'string: travelling wave →' : 'string: standing wave (nodes fixed)', l, yS - aS - 12, C.muted, { align: 'left', size: 12 });
+      // energy densities
+      const fillArea = (arr, col, alpha) => {
+        ctx.save(); ctx.fillStyle = col; ctx.globalAlpha = alpha; ctx.beginPath(); ctx.moveTo(arr[0][0], yE);
+        for (const [x, e] of arr) ctx.lineTo(x, yE - aE * (e / norm));
+        ctx.lineTo(arr[arr.length - 1][0], yE); ctx.closePath(); ctx.fill(); ctx.restore();
+      };
+      line(ctx, [[l, yE], [r, yE]], C.line, 1);
+      fillArea(K, C.vy, 0.32); fillArea(U, C.ten, 0.32);
+      line(ctx, K.map(([x, e]) => [x, yE - aE * (e / norm)]), C.vy, 2);
+      line(ctx, U.map(([x, e]) => [x, yE - aE * (e / norm)]), C.ten, 2, [5, 3]);
+      label(ctx, 'kinetic ½ρ(∂ₜψ)²', l, yE - aE - 10, C.vy, { align: 'left', size: 12 });
+      label(ctx, 'potential ½T(∂ₓψ)²  (dashed)', l + 150, yE - aE - 10, C.ten, { align: 'left', size: 12 });
+      // power
+      line(ctx, [[l, yP], [r, yP]], C.line, 1);
+      line(ctx, Pw.map(([x, p]) => [x, yP - aP * (p / (ww * kk))]), C.z, 2);
+      label(ctx, 'power P = −T ∂ₓψ ∂ₜψ', r, yP - aP - 8, C.z, { align: 'right', size: 12 });
+    }
+    addWidget(box, (dt) => { if (st.playing) st.t += dt; draw(); });
+  }
+
+  /* ============ 8. Standing-wave builder with any end impedance (L10 p.1-3) ============ */
+  function initStanding() {
+    const box = $('#sim-standing');
+    const S = setupCanvas($('canvas', box), (w) => Math.max(240, Math.min(320, w * 0.42)));
+    const sl = $('#w-zr');
+    const st = { mode: 'wall', lr: 2, t: 0, playing: !reduceMotion, parts: true };
+    if (!st.playing) st.t = 0.6;
+    function R() { if (st.mode === 'wall') return -1; if (st.mode === 'free') return 1; const r = Math.pow(10, st.lr); return (1 - r) / (1 + r); }
+    function zr() { return st.mode === 'wall' ? Infinity : st.mode === 'free' ? 0 : Math.pow(10, st.lr); }
+    function upd() {
+      const Rv = R();
+      $('#w-zr-out').textContent = st.mode === 'wall' ? '∞ (wall)' : st.mode === 'free' ? '0 (free end)' : fmt(zr());
+      $('#w-R').textContent = fmt(Rv);
+      $('#w-max').textContent = fmt(1 + Math.abs(Rv)) + ' A';
+      $('#w-min').textContent = fmt(1 - Math.abs(Rv)) + ' A';
+      $$('[data-wend]', box).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.wend === st.mode)));
+      $('#w-say').textContent = st.mode === 'wall' ? 'Wall (Z = ∞, R = −1): a node at the wall and every λ/2 from it. This is ψ = −2A sin(ωt + φ) sin kx.'
+        : st.mode === 'free' ? 'Free end (Z = 0, R = +1): an antinode at the end, where the slope stays zero. This is ψ = 2A cos(ωt + φ) cos kx.'
+        : Math.abs(Rv) < 0.02 ? 'Matched end: nothing comes back, so the wave just travels. No nodes at all.'
+        : 'Partial reflection: a travelling part rides on top of a standing part, so the dips never reach zero. The closer |R| is to 1, the deeper the dips.';
+    }
+    $$('[data-wend]', box).forEach((b) => b.addEventListener('click', () => { st.mode = b.dataset.wend; if (st.mode === 'wall') sl.value = 2; if (st.mode === 'free') sl.value = -2; upd(); }));
+    sl.addEventListener('input', () => { st.mode = 'string'; st.lr = parseFloat(sl.value); upd(); });
+    $('#w-parts').addEventListener('change', (e) => { st.parts = e.target.checked; });
+    playButton($('#w-play'), () => st.playing, (v) => { st.playing = v; });
+    upd();
+    function draw() {
+      const { ctx, w, h } = S, C = pal();
+      ctx.clearRect(0, 0, w, h);
+      const xl = -0.22, xr = 1, l = 14, r = w - 14;
+      const X = (x) => l + ((x - xl) / (xr - xl)) * (r - l);
+      const yc = h * 0.52, A = h * 0.17;
+      const k = TAU / 0.4, om = TAU * 0.45, Rv = R(), Zr = zr();
+      const ph = om * st.t;
+      line(ctx, [[X(0), yc], [X(xr), yc]], C.line, 1, [3, 4]);
+      // envelope band for x > 0
+      const up = [], dn = [];
+      for (let i = 0; i <= 200; i++) {
+        const x = (i / 200) * xr, env = Math.sqrt(Math.max(0, 1 + Rv * Rv + 2 * Rv * Math.cos(2 * k * x)));
+        up.push([X(x), yc - A * env]); dn.push([X(x), yc + A * env]);
+      }
+      ctx.save(); ctx.fillStyle = C.soft; ctx.beginPath(); ctx.moveTo(up[0][0], up[0][1]);
+      up.forEach(([x, y]) => ctx.lineTo(x, y)); for (let i = dn.length - 1; i >= 0; i--) ctx.lineTo(dn[i][0], dn[i][1]);
+      ctx.closePath(); ctx.fill(); ctx.restore();
+      line(ctx, up, C.muted, 1, [2, 3]); line(ctx, dn, C.muted, 1, [2, 3]);
+      const inc = [], ref = [], sum = [];
+      for (let i = 0; i <= 300; i++) {
+        const x = (i / 300) * xr;
+        const a = Math.cos(ph + k * x), b = Rv * Math.cos(ph - k * x); // incident moves LEFT, reflection = R psi_i(-x,t)
+        inc.push([X(x), yc - A * a]); ref.push([X(x), yc - A * b]); sum.push([X(x), yc - A * (a + b)]);
+      }
+      if (st.parts) { line(ctx, inc, C.inc, 1.5, [5, 4]); line(ctx, ref, C.r, 1.5, [5, 4]); }
+      line(ctx, sum, C.ink, 2.6);
+      // nodes for |R| = 1
+      if (Math.abs(Math.abs(Rv) - 1) < 1e-9) {
+        const first = Rv < 0 ? 0 : 0.1;
+        for (let x = first; x <= xr + 1e-6; x += 0.2) {
+          ctx.save(); ctx.fillStyle = C.r; ctx.beginPath(); ctx.arc(X(x), yc, 4, 0, TAU); ctx.fill(); ctx.restore();
+        }
+        label(ctx, 'nodes every λ/2', X(Rv < 0 ? 0.4 : 0.5), yc + A * 2.05 + 4, C.r, { size: 11, halo: true });
+      }
+      // the end
+      if (st.mode === 'wall') hatchWall(ctx, X(0), yc - A * 2.2, yc + A * 2.2, -1, C.muted);
+      else if (st.mode === 'free') rodAndRing(ctx, X(0), yc - A * 2.3, yc + A * 2.3, yc - A * (1 + Rv) * Math.cos(ph), C.muted);
+      else {
+        // a second string on the left carries the transmitted part (equal tension: k2 = k * Z2/Z1)
+        const T = 1 + Rv, k2 = k * Zr, tr = [];
+        const lam2px = (TAU / k2) / (xr - xl) * (r - l);
+        if (lam2px > 7) {
+          for (let i = 0; i <= 160; i++) { const x = xl + (i / 160) * (0 - xl); tr.push([X(x), yc - A * T * Math.cos(ph + k2 * x)]); }
+          line(ctx, tr, C.ink, Math.max(1.2, Math.min(7, 2.6 * Math.pow(Zr, 0.66))));
+          if (st.parts) line(ctx, tr, C.t, 1.4, [5, 4]);
+        } else {
+          ctx.save(); ctx.fillStyle = C.t; ctx.globalAlpha = 0.25; ctx.fillRect(X(xl), yc - A * T, X(0) - X(xl), 2 * A * T + 1); ctx.restore();
+          line(ctx, [[X(xl), yc], [X(0), yc]], C.ink, 6);
+        }
+        ctx.save(); ctx.fillStyle = C.bg; ctx.strokeStyle = C.ink; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(X(0), yc - A * T * Math.cos(ph), 4, 0, TAU); ctx.fill(); ctx.stroke(); ctx.restore();
+      }
+      label(ctx, '← incident comes from the right', X(xr) - 2, h * 0.08, C.inc, { align: 'right', size: 12, halo: true });
+      label(ctx, 'x = 0', X(0), h - 10, C.muted, { size: 11 });
+    }
+    addWidget(box, (dt) => { if (st.playing) st.t += dt; draw(); });
+  }
+
+  /* ============ 9. Normal modes of a string fixed at both ends (L10 p.3-4) ============ */
+  function initModes() {
+    const box = $('#sim-modes');
+    const S = setupCanvas($('canvas', box), (w) => Math.max(190, Math.min(240, w * 0.34)));
+    const st = { n: 1, t: 0, playing: !reduceMotion };
+    if (!st.playing) st.t = 0.55;
+    $$('[data-mode]', box).forEach((b) => b.addEventListener('click', () => { st.n = parseInt(b.dataset.mode, 10); upd(); }));
+    function upd() {
+      $$('[data-mode]', box).forEach((b) => b.setAttribute('aria-pressed', String(parseInt(b.dataset.mode, 10) === st.n)));
+      $('#m-lam').textContent = st.n === 1 ? '2L' : st.n === 2 ? 'L' : '2L/' + st.n;
+      $('#m-nu').textContent = st.n === 1 ? 'ν₁' : st.n + 'ν₁';
+      $('#m-nodes').textContent = String(st.n + 1) + ' (counting both walls)';
+    }
+    upd();
+    playButton($('#m-play'), () => st.playing, (v) => { st.playing = v; });
+    function draw() {
+      const { ctx, w, h } = S, C = pal();
+      ctx.clearRect(0, 0, w, h);
+      const l = 26, r = w - 26, yc = h * 0.5, A = h * 0.32, n = st.n;
+      const X = (u) => l + u * (r - l);
+      line(ctx, [[l, yc], [r, yc]], C.line, 1, [3, 4]);
+      const env1 = [], env2 = [], s = [];
+      const om1 = TAU * 0.35;
+      for (let i = 0; i <= 300; i++) {
+        const u = i / 300, sh = Math.sin(n * Math.PI * u);
+        env1.push([X(u), yc - A * sh]); env2.push([X(u), yc + A * sh]);
+        s.push([X(u), yc - A * sh * Math.sin(n * om1 * st.t + Math.PI / 2)]);
+      }
+      line(ctx, env1, C.muted, 1, [2, 3]); line(ctx, env2, C.muted, 1, [2, 3]);
+      line(ctx, s, C.ink, 2.6);
+      for (let m = 0; m <= n; m++) { ctx.save(); ctx.fillStyle = C.r; ctx.beginPath(); ctx.arc(X(m / n), yc, 4, 0, TAU); ctx.fill(); ctx.restore(); }
+      hatchWall(ctx, l, yc - A - 10, yc + A + 10, -1, C.muted);
+      hatchWall(ctx, r, yc - A - 10, yc + A + 10, 1, C.muted);
+      label(ctx, 'x = 0', l, h - 8, C.muted, { size: 11 }); label(ctx, 'x = L', r, h - 8, C.muted, { size: 11 });
+    }
+    addWidget(box, (dt) => { if (st.playing) st.t += dt; draw(); });
+  }
+
+  /* ============ 10. Build a packet from single-frequency waves (L12 p.2-4, p.8-9) ============ */
+  function initPacket() {
+    const box = $('#sim-packet');
+    const cv = $('canvas', box);
+    const S = setupCanvas(cv, (w) => Math.max(200, Math.min(260, w * 0.38)));
+    const sl = $('#p-n');
+    function draw() {
+      const { ctx, w, h } = S, C = pal();
+      ctx.clearRect(0, 0, w, h);
+      const N = parseInt(sl.value, 10);
+      $('#p-n-out').textContent = String(N);
+      const l = 12, r = w - 12, yc = h * 0.62, A = h * 0.3, yComp = h * 0.16, aComp = h * 0.08;
+      const k0 = TAU * 6, sk = TAU * 0.9, dk = (6 * sk) / 40;
+      const ks = [], ws = [];
+      for (let j = 0; j < N; j++) { const q = (j - (N - 1) / 2) * dk; ks.push(k0 + q); ws.push(Math.exp(-(q * q) / (2 * sk * sk))); }
+      const wsum = ws.reduce((a, b) => a + b, 0);
+      const X = (x) => l + ((x + 1) / 2) * (r - l);
+      // components (only a few, faint)
+      if (N <= 9) {
+        for (let j = 0; j < N; j++) {
+          const pts = [];
+          for (let i = 0; i <= 300; i++) { const x = -1 + (2 * i) / 300; pts.push([X(x), yComp - aComp * Math.cos(ks[j] * x)]); }
+          line(ctx, pts, C.inc, 1, null);
+        }
+        label(ctx, N === 1 ? 'one single-frequency wave' : N + ' single-frequency waves (top), their sum (below)', l, 10, C.muted, { align: 'left', size: 11 });
+      } else label(ctx, N + ' single-frequency waves added (too many to draw one by one)', l, 10, C.muted, { align: 'left', size: 11 });
+      const sum = [], env = [], envN = [];
+      for (let i = 0; i <= 600; i++) {
+        const x = -1 + (2 * i) / 600;
+        let s = 0; for (let j = 0; j < N; j++) s += ws[j] * Math.cos(ks[j] * x);
+        sum.push([X(x), yc - A * (s / wsum)]);
+        const hx = Math.exp(-(x * x) * sk * sk / 2);
+        env.push([X(x), yc - A * hx]); envN.push([X(x), yc + A * hx]);
+      }
+      line(ctx, [[l, yc], [r, yc]], C.line, 1, [3, 4]);
+      if (N >= 15) { line(ctx, env, C.z, 1.4, [5, 4]); line(ctx, envN, C.z, 1.4, [5, 4]); label(ctx, 'envelope h(x)', X(0.38), yc - A * 0.55, C.z, { align: 'left', size: 11, halo: true }); }
+      line(ctx, sum, C.ink, 2.2);
+      $('#p-say').textContent = N === 1 ? 'One frequency: a wave that never ends. It has an exact wavelength, but no position.'
+        : N === 2 ? 'Two frequencies: beats. The sum is a fast carrier inside a slow envelope (L12 p.2–3).'
+        : N < 15 ? 'More frequencies: the bumps of the envelope move apart and the middle one stands out.'
+        : 'Many frequencies with smoothly falling weights: one localized packet, a carrier cos(k₀x) inside the envelope h(x). A narrower spread of k gives a wider packet.';
+    }
+    sl.addEventListener('input', draw);
+    if ('ResizeObserver' in window) new ResizeObserver(draw).observe(cv);
+    new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', draw);
+    draw();
+    $$('[data-send-packet]').forEach((b) => b.addEventListener('click', () => {
+      junctionAPI.setShape && junctionAPI.setShape('packet');
+      document.getElementById('sim-junction').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
+    }));
+  }
+
+  /* buttons in the text that load a preset into the junction simulator */
+  function initTryButtons() {
+    $$('[data-try]').forEach((b) => b.addEventListener('click', () => {
+      junctionAPI.preset && junctionAPI.preset(b.dataset.try);
+      document.getElementById('sim-junction').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
+    }));
+  }
+
+  function start() {
+    safeInit('sim-junction', initJunction);
+    safeInit('sim-balance', initBalance);
+    safeInit('sim-shake', initShake);
+    safeInit('sim-curves', initCurves);
+    safeInit('sim-circuit', initCircuit);
+    safeInit('sim-taper', initTaper);
+    safeInit('sim-energy', initEnergy);
+    safeInit('sim-standing', initStanding);
+    safeInit('sim-modes', initModes);
+    safeInit('sim-packet', initPacket);
+    safeInit('try-buttons', initTryButtons);
+    window.__impedanceWidgets = widgets; // lets a test advance the figures when the page is in the background
+    requestAnimationFrame(loop);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+  else start();
+})();
