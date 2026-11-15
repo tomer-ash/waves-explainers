@@ -1,10 +1,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Impedance on a String</title>
+<title>עכבה במיתר</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,750&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=Heebo:wght@400;600&family=JetBrains+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,750&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=Heebo:wght@400;600;700;800&family=JetBrains+Mono:wght@500&display=swap">
 <style>
 /* Layout: one reading column (~44rem) with figures that widen to ~60rem; colour = meaning, the same on every figure and formula. */
 :root {
@@ -134,6 +134,23 @@ details .ans { border-left: 3px solid var(--c-t); padding-left: 12px; }
 footer { margin-top: 48px; font-size: 14px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 14px; }
 @media (max-width: 520px) { body { font-size: 16px; } .fig { padding: 10px; } }
 @media (prefers-reduced-motion: reduce) { .bar span { transition: none; } }
+
+/* Hebrew / right-to-left: the page mirrors, while math, canvases, sliders and numbers stay left-to-right. */
+:root {
+  --font-display: "Bricolage Grotesque", "Heebo", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Heebo", "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+}
+mjx-container { direction: ltr; unicode-bidi: isolate; }
+.fig canvas, .controls input[type=range], .readout .val, .slider output, .unit, .src { direction: ltr; unicode-bidi: isolate; }
+.unit[dir="rtl"] { direction: rtl; }
+.unit, .src { font-family: "JetBrains Mono", "Heebo", ui-monospace, Consolas, monospace; }
+.bar, .barlab { direction: ltr; } /* same side as the figure: echo on the left */
+.eyebrow, .group-title, .mine { direction: rtl; unicode-bidi: isolate; font-family: "JetBrains Mono", "Heebo", ui-monospace, Consolas, monospace; letter-spacing: 0.02em; }
+.deriv li { padding: 8px 0; padding-inline-start: 36px; }
+.deriv li::before { left: auto; inset-inline-start: 0; }
+.warn { border-left: 0; border-inline-start: 3px solid var(--c-ten); border-radius: 0; border-start-end-radius: 8px; border-end-end-radius: 8px; }
+details .ans { border-left: 0; padding-left: 0; border-inline-start: 3px solid var(--c-t); padding-inline-start: 12px; }
+th, td { text-align: start; }
 </style>
 <script>
 window.MathJax = {
@@ -156,178 +173,178 @@ window.MathJax = {
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" defer></script>
 
-<div class="page">
+<div class="page" lang="he" dir="rtl">
 <header id="top" class="col">
-  <div class="eyebrow">Waves 83325 · lectures 07–10 · <span class="he" lang="he">עכבה</span></div>
-  <h1>Impedance on a String</h1>
-  <p class="lede">When a wave reaches the place where one string meets another, part of it bounces back and part goes on. One number per string decides how much: its <span class="k-z">impedance Z</span>. This page builds that number from nothing, says what every letter is for, and lets you play with each idea.</p>
+  <div class="eyebrow">גלים 83325 · הרצאות 07–10 · <span class="he" lang="he">עכבה</span></div>
+  <h1>עכבה במיתר</h1>
+  <p class="lede">כשגל מגיע למקום שבו מיתר אחד מתחבר למיתר אחר, חלק ממנו חוזר אחורה וחלק ממשיך הלאה. מספר אחד לכל מיתר קובע כמה: <span class="k-z">העכבה Z</span> שלו. הדף הזה בונה את המספר הזה מאפס, מסביר בשביל מה כל אות, ונותן לכם לשחק עם כל רעיון.</p>
 </header>
 
 <div class="fig" id="sim-junction">
-  <canvas aria-label="Animation: a pulse on string 1 reaches a junction with string 2 and splits into a reflected and a transmitted pulse"></canvas>
+  <canvas aria-label="אנימציה: פולס על מיתר 1 מגיע לנקודת החיבור עם מיתר 2 ומתפצל לפולס מוחזר ולפולס מועבר"></canvas>
   <div class="controls">
-    <div class="btns" role="group" aria-label="What is on the right">
-      <button data-preset="wall">Wall</button>
-      <button data-preset="heavy">Heavier string (ρ×4)</button>
-      <button data-preset="same">Same string</button>
-      <button data-preset="matched">Matched, faster (T×3, ρ÷3)</button>
-      <button data-preset="light">Lighter string (ρ÷4)</button>
-      <button data-preset="free">Free end</button>
+    <div class="btns" role="group" aria-label="מה יש מימין">
+      <button data-preset="wall">קיר</button>
+      <button data-preset="heavy">מיתר כבד יותר (ρ×4)</button>
+      <button data-preset="same">אותו מיתר</button>
+      <button data-preset="matched">מתואם, ומהיר יותר (T×3, ρ÷3)</button>
+      <button data-preset="light">מיתר קל יותר (ρ÷4)</button>
+      <button data-preset="free">קצה חופשי</button>
     </div>
   </div>
   <div class="controls">
-    <div class="slider"><label for="j-rho">density ρ₂ / ρ₁</label><input id="j-rho" type="range" min="-2" max="2" step="0.01" value="0.6"><output id="j-rho-out"></output></div>
-    <div class="slider"><label for="j-ten"><span class="k-ten">tension</span> T₂ / T₁</label><input id="j-ten" type="range" min="-1" max="1" step="0.01" value="0"><output id="j-ten-out"></output></div>
+    <div class="slider"><label for="j-rho">צפיפות <bdi>ρ₂ / ρ₁</bdi></label><input id="j-rho" type="range" min="-2" max="2" step="0.01" value="0.6"><output id="j-rho-out"></output></div>
+    <div class="slider"><label for="j-ten"><span class="k-ten">מתיחות</span> <bdi>T₂ / T₁</bdi></label><input id="j-ten" type="range" min="-1" max="1" step="0.01" value="0"><output id="j-ten-out"></output></div>
   </div>
   <div class="controls">
-    <div class="btns" role="group" aria-label="Pulse shape"><button data-shape="bump">Single bump</button><button data-shape="packet">Wave packet</button></div>
-    <label class="chk"><input type="checkbox" id="j-parts" checked> show the parts (dashed)</label>
-    <label class="chk"><input type="checkbox" id="j-ghost"> show the mirror trick</label>
-    <div class="btns"><button id="j-play">Pause</button><button id="j-restart">Restart</button></div>
+    <div class="btns" role="group" aria-label="צורת הפולס"><button data-shape="bump">בליטה אחת</button><button data-shape="packet">חבורת גלים</button></div>
+    <label class="chk"><input type="checkbox" id="j-parts" checked> הצג את הרכיבים (מקווקו)</label>
+    <label class="chk"><input type="checkbox" id="j-ghost"> הצג את טריק המראה</label>
+    <div class="btns"><button id="j-play">השהה</button><button id="j-restart">התחל מחדש</button></div>
   </div>
   <div class="readout">
     <div><span class="lab">Z₂ / Z₁</span><span class="val k-z" id="j-zr"></span></div>
-    <div><span class="lab">speed v₂ / v₁</span><span class="val" id="j-vr"></span></div>
-    <div><span class="lab">R (height of the echo)</span><span class="val k-r" id="j-R"></span></div>
-    <div><span class="lab">T (height passed on)</span><span class="val k-t" id="j-T"></span></div>
-    <div><span class="lab">power back R_E</span><span class="val k-r" id="j-RE"></span></div>
-    <div><span class="lab">power through T_E</span><span class="val k-t" id="j-TE"></span></div>
+    <div><span class="lab">מהירות <bdi>v₂ / v₁</bdi></span><span class="val" id="j-vr"></span></div>
+    <div><span class="lab">R (גובה ההד)</span><span class="val k-r" id="j-R"></span></div>
+    <div><span class="lab">T (הגובה שממשיך)</span><span class="val k-t" id="j-T"></span></div>
+    <div><span class="lab">הספק חוזר <bdi>R_E</bdi></span><span class="val k-r" id="j-RE"></span></div>
+    <div><span class="lab">הספק עובר <bdi>T_E</bdi></span><span class="val k-t" id="j-TE"></span></div>
   </div>
   <div class="bar" aria-hidden="true"><span class="r" id="j-bar-r"></span><span class="t" id="j-bar-t"></span></div>
-  <div class="barlab"><span>reflected power</span><span>transmitted power</span></div>
+  <div class="barlab"><span>הספק מוחזר</span><span>הספק מועבר</span></div>
   <p class="say" id="j-say" aria-live="polite"></p>
-  <p class="cap">The solid black line is the real string. Dashed: the <span class="k-inc">incident</span>, <span class="k-r">reflected</span> and <span class="k-t">transmitted</span> waves that add up to it. A thicker line means a denser string. The mirror trick (grey) is explained in section 2. This uses the exact solution of L07–L08, not a numerical guess.</p>
+  <p class="cap">הקו השחור הרציף הוא המיתר האמיתי. בקו מקווקו: הגלים <span class="k-inc">הפוגע</span>, <span class="k-r">המוחזר</span> ו<span class="k-t">המועבר</span>, שסכומם נותן אותו. קו עבה יותר פירושו מיתר צפוף יותר. טריק המראה (באפור) מוסבר בסעיף 2. זה הפתרון המדויק מהרצאות 07–08, לא קירוב נומרי.</p>
 </div>
 
-<nav class="col" aria-label="Sections">
+<nav class="col" aria-label="סעיפים">
   <ul class="toc">
-    <li><a href="#letters">The letters</a></li>
-    <li><a href="#rules">1 · Two rules at a junction</a></li>
-    <li><a href="#solve">2 · R and T</a></li>
-    <li><a href="#meaning">3 · What Z is</a></li>
-    <li><a href="#matching">4 · Matching</a></li>
-    <li><a href="#energy">5 · Energy</a></li>
-    <li><a href="#standing">6 · Standing waves</a></li>
-    <li><a href="#packets">7 · Wave packets</a></li>
-    <li><a href="#media">8 · Other media</a></li>
-    <li><a href="#check">Check yourself</a></li>
-    <li><a href="#recap">One-screen recap</a></li>
+    <li><a href="#letters">האותיות</a></li>
+    <li><a href="#rules">1 · שני כללים בנקודת החיבור</a></li>
+    <li><a href="#solve">2 · R ו-T</a></li>
+    <li><a href="#meaning">3 · מהי Z</a></li>
+    <li><a href="#matching">4 · תיאום</a></li>
+    <li><a href="#energy">5 · אנרגיה</a></li>
+    <li><a href="#standing">6 · גלים עומדים</a></li>
+    <li><a href="#packets">7 · חבורות גלים</a></li>
+    <li><a href="#media">8 · תווכים אחרים</a></li>
+    <li><a href="#check">בדקו את עצמכם</a></li>
+    <li><a href="#recap">סיכום במסך אחד</a></li>
   </ul>
 </nav>
 
 <!-- ================= LETTERS ================= -->
 <section id="letters">
   <div class="col">
-    <h2>The letters, and what each one is for</h2>
-    <p class="q">You will meet these on every page of lectures 07–10. Each has a job. The colour of a letter stays the same in every formula and figure below.</p>
+    <h2>האותיות, ובשביל מה כל אחת</h2>
+    <p class="q">תפגשו אותן בכל עמוד של הרצאות 07–10. לכל אחת יש תפקיד. הצבע של כל אות זהה בכל נוסחה ובכל איור בהמשך.</p>
   </div>
-  <div class="group-title">The string itself</div>
+  <div class="group-title">המיתר עצמו</div>
   <div class="letters">
-    <div class="letter"><span class="sym">\(\rho\)</span> <span class="name">linear density</span> <span class="unit">kg/m</span><p>Mass per metre of string. It is the string's <em>inertia</em>: how hard it is to get it moving.</p></div>
-    <div class="letter"><span class="sym">\(\Ten\)</span> <span class="name k-ten">tension</span> <span class="unit">N</span><p>How hard the string is pulled. It is the <em>restoring force</em>: what pulls a bent string back straight.</p></div>
-    <div class="letter"><span class="sym">\(v=\sqrt{\Ten/\rho}\)</span> <span class="name">wave speed</span> <span class="unit">m/s</span><p>How fast a shape travels along the string. Tight and light means fast. (Called \(c\) in L05–06 and again from L09 p.9.)</p></div>
-    <div class="letter"><span class="sym">\(\Zc=\sqrt{\Ten\rho}\)</span> <span class="name k-z">impedance</span> <span class="unit">kg/s</span><p>How hard the string is to <em>shake</em>. Tight and heavy means high impedance. The only property of a string that a junction feels. Section 3.</p></div>
+    <div class="letter"><span class="sym">\(\rho\)</span> <span class="name">צפיפות אורכית</span> <span class="unit">kg/m</span><p>מסה למטר מיתר. זו ה<em>אינרציה</em> של המיתר: כמה קשה להזיז אותו.</p></div>
+    <div class="letter"><span class="sym">\(\Ten\)</span> <span class="name k-ten">מתיחות</span> <span class="unit">N</span><p>כמה חזק מושכים את המיתר. זה <em>הכוח המחזיר</em>: מה שמחזיר מיתר כפוף למצב ישר.</p></div>
+    <div class="letter"><span class="sym">\(v=\sqrt{\Ten/\rho}\)</span> <span class="name">מהירות הגל</span> <span class="unit">m/s</span><p>כמה מהר צורה נעה לאורך המיתר. מתוח וקל פירושו מהיר. (בהרצאות 05–06, ושוב מהרצאה 09 עמ' 9, היא נקראת \(c\).)</p></div>
+    <div class="letter"><span class="sym">\(\Zc=\sqrt{\Ten\rho}\)</span> <span class="name k-z">עכבה</span> <span class="unit">kg/s</span><p>כמה קשה <em>לנער</em> את המיתר. מתוח וכבד פירושו עכבה גבוהה. זו התכונה היחידה של מיתר שנקודת החיבור מרגישה. סעיף 3.</p></div>
   </div>
-  <div class="group-title">The wave on it</div>
+  <div class="group-title">הגל שעליו</div>
   <div class="letters">
-    <div class="letter"><span class="sym">\(\psi(x,t)\)</span> <span class="name">displacement</span> <span class="unit">m</span><p>How far the point at position \(x\) is from the straight line, at time \(t\). The string's picture.</p></div>
-    <div class="letter"><span class="sym">\(\dx\psi\)</span> <span class="name">slope</span> <span class="unit">no unit</span><p>The steepness of the string at a point. Tension times slope is the vertical pull there.</p></div>
-    <div class="letter"><span class="sym">\(\vy=\dt\psi\)</span> <span class="name k-vy">transverse velocity</span> <span class="unit">m/s</span><p>How fast a <em>point</em> of the string moves up and down. Not the wave speed \(v\): the point goes up and down while the shape runs sideways.</p></div>
-    <div class="letter"><span class="sym">\(f(t-x/v)\)</span> <span class="name">a shape moving right</span><p>Any function of the single combination \(t-x/v\) is a right-mover; \(f(t+x/v)\) moves left. The lecture uses this to handle any pulse at once.</p></div>
+    <div class="letter"><span class="sym">\(\psi(x,t)\)</span> <span class="name">העתק</span> <span class="unit">m</span><p>כמה רחוקה הנקודה שבמקום \(x\) מהקו הישר, ברגע \(t\). זו התמונה של המיתר.</p></div>
+    <div class="letter"><span class="sym">\(\dx\psi\)</span> <span class="name">שיפוע</span> <span class="unit" dir="rtl">ללא יחידות</span><p>כמה תלול המיתר בנקודה. מתיחות כפול שיפוע היא המשיכה האנכית שם.</p></div>
+    <div class="letter"><span class="sym">\(\vy=\dt\psi\)</span> <span class="name k-vy">מהירות רוחבית</span> <span class="unit">m/s</span><p>כמה מהר <em>נקודה</em> על המיתר זזה למעלה ולמטה. זו לא מהירות הגל \(v\): הנקודה עולה ויורדת, והצורה רצה הצידה.</p></div>
+    <div class="letter"><span class="sym">\(f(t-x/v)\)</span> <span class="name">צורה שנעה ימינה</span><p>כל פונקציה של הצירוף היחיד \(t-x/v\) נעה ימינה; \(f(t+x/v)\) נעה שמאלה. ההרצאה משתמשת בזה כדי לטפל בכל פולס בבת אחת.</p></div>
   </div>
-  <div class="group-title">At a junction</div>
+  <div class="group-title">בנקודת החיבור</div>
   <div class="letters">
-    <div class="letter"><span class="sym">\(\fI,\ \fR,\ \fT\)</span> <span class="name">the three profiles</span><p>The <span class="k-inc">incident</span> shape coming in, the <span class="k-r">reflected</span> one going back, the <span class="k-t">transmitted</span> one going on. Their wave fields are \(\psiI,\psiR,\psiT\).</p></div>
-    <div class="letter"><span class="sym">\(s\)</span> <span class="name">the argument</span><p>Just a name for "whatever goes inside \(f\)". The lecture writes \(f(s)\) to stress it is one variable, not necessarily time (L07 p.3).</p></div>
-    <div class="letter"><span class="sym">\(\Rc\)</span> <span class="name k-r">reflection coefficient</span> <span class="unit">no unit</span><p>Height of the echo ÷ height of the incoming pulse. Negative means the echo is upside down.</p></div>
-    <div class="letter"><span class="sym">\(\Tc\)</span> <span class="name k-t">transmission coefficient</span> <span class="unit">no unit</span><p>Height of the pulse that goes on ÷ height of the incoming pulse. It can be bigger than 1.</p></div>
+    <div class="letter"><span class="sym">\(\fI,\ \fR,\ \fT\)</span> <span class="name">שלושת הפרופילים</span><p>הצורה <span class="k-inc">הפוגעת</span> שנכנסת, הצורה <span class="k-r">המוחזרת</span> שחוזרת אחורה, והצורה <span class="k-t">המועברת</span> שממשיכה הלאה. שדות הגל שלהן הם \(\psiI,\psiR,\psiT\).</p></div>
+    <div class="letter"><span class="sym">\(s\)</span> <span class="name">הארגומנט</span><p>סתם שם ל"מה שנכנס לתוך \(f\)". ההרצאה כותבת \(f(s)\) כדי להדגיש שזה משתנה אחד, ולא בהכרח זמן (הרצאה 07 עמ' 3).</p></div>
+    <div class="letter"><span class="sym">\(\Rc\)</span> <span class="name k-r">מקדם החזרה</span> <span class="unit" dir="rtl">ללא יחידות</span><p>גובה ההד ÷ גובה הפולס הנכנס. ערך שלילי פירושו שההד הפוך.</p></div>
+    <div class="letter"><span class="sym">\(\Tc\)</span> <span class="name k-t">מקדם העברה</span> <span class="unit" dir="rtl">ללא יחידות</span><p>גובה הפולס שממשיך ÷ גובה הפולס הנכנס. הוא יכול להיות גדול מ-1.</p></div>
   </div>
-  <div class="group-title">Energy (L09)</div>
+  <div class="group-title">אנרגיה (הרצאה 09)</div>
   <div class="letters">
-    <div class="letter"><span class="sym">\(\mathcal E\)</span> <span class="name">energy density</span> <span class="unit">J/m</span><p>Energy stored per metre of string: motion (kinetic) plus stretch (potential).</p></div>
-    <div class="letter"><span class="sym">\(P\)</span> <span class="name">power</span> <span class="unit">W</span><p>Energy per second flowing past a point, counted positive to the right.</p></div>
-    <div class="letter"><span class="sym">\(\RE,\ \TE\)</span> <span class="name">power fractions</span><p>The share of the incoming <em>power</em> that goes back and that goes on. They add to 1. They are not \(\Rc\) and \(\Tc\).</p></div>
+    <div class="letter"><span class="sym">\(\mathcal E\)</span> <span class="name">צפיפות אנרגיה</span> <span class="unit">J/m</span><p>אנרגיה אגורה למטר מיתר: תנועה (קינטית) ועוד מתיחה (פוטנציאלית).</p></div>
+    <div class="letter"><span class="sym">\(P\)</span> <span class="name">הספק</span> <span class="unit">W</span><p>אנרגיה לשנייה שזורמת דרך נקודה, נספרת כחיובית ימינה.</p></div>
+    <div class="letter"><span class="sym">\(\RE,\ \TE\)</span> <span class="name">חלקי ההספק</span><p>החלק מה<em>הספק</em> הנכנס שחוזר, והחלק שממשיך. הסכום שלהם 1. הם לא \(\Rc\) ו-\(\Tc\).</p></div>
   </div>
   <div class="col">
-    <div class="warn"><b>One letter, three jobs.</b> The lecture uses \(T\) for the period (L05), the <span class="k-ten">tension</span> (L06 on) and the <span class="k-t">transmission coefficient</span> (L07 on), sometimes on the same page. Here the tension is always <span class="k-ten">amber</span> \(\Ten\) and the coefficient always <span class="k-t">green</span> \(\Tc\). In the same way, \(\psi_t\) is the transmitted wave in L07 and L09 p.4, so this page writes the velocity as \(\vy\) or \(\dt\psi\), never \(\psi_t\).</div>
+    <div class="warn"><b>אות אחת, שלושה תפקידים.</b> ההרצאה משתמשת ב-\(T\) למחזור (הרצאה 05), ל<span class="k-ten">מתיחות</span> (מהרצאה 06 והלאה) ול<span class="k-t">מקדם ההעברה</span> (מהרצאה 07 והלאה), לפעמים באותו עמוד. כאן המתיחות היא תמיד \(\Ten\) <span class="k-ten">בכתום</span>, והמקדם תמיד \(\Tc\) <span class="k-t">בירוק</span>. באותו אופן, \(\psi_t\) הוא הגל המועבר בהרצאה 07 ובהרצאה 09 עמ' 4, ולכן הדף כותב את המהירות כ-\(\vy\) או \(\dt\psi\), ואף פעם לא \(\psi_t\).</div>
   </div>
 </section>
 
 <!-- ================= 1. RULES ================= -->
 <section id="rules">
   <div class="col">
-    <div class="eyebrow">1 · L07 p.1–3, L08 p.1</div>
-    <h2>Why a junction needs exactly two rules</h2>
-    <p class="q">Until L07 the string was infinite and uniform, so nothing ever came back. What changes when two different strings are tied together?</p>
-    <p>Put string 1 on \(x&lt;0\) and string 2 on \(x&gt;0\), joined at \(x=0\). A pulse comes from the left. Two things can come out of the junction: an echo going left and a pulse going right. So there are <b>two unknown shapes</b>, \(\fR\) and \(\fT\). To find two unknowns you need two equations. The junction gives exactly two:</p>
+    <div class="eyebrow">1 · הרצאה 07 עמ' 1–3, הרצאה 08 עמ' 1</div>
+    <h2>למה נקודת חיבור צריכה בדיוק שני כללים</h2>
+    <p class="q">עד הרצאה 07 המיתר היה אינסופי ואחיד, ולכן שום דבר לא חזר. מה משתנה כשקושרים יחד שני מיתרים שונים?</p>
+    <p>שימו את מיתר 1 ב-\(x&lt;0\) ואת מיתר 2 ב-\(x&gt;0\), מחוברים ב-\(x=0\). פולס מגיע משמאל. שני דברים יכולים לצאת מנקודת החיבור: הד שנע שמאלה ופולס שנע ימינה. כלומר יש <b>שתי צורות לא ידועות</b>, \(\fR\) ו-\(\fT\). כדי למצוא שני נעלמים צריך שתי משוואות, ונקודת החיבור נותנת בדיוק שתיים:</p>
     <ol>
-      <li><b>The string does not tear.</b> Both sides have the same height at \(x=0\) at every moment.</li>
-      <li><b>No net force on the knot.</b> The knot has no mass, so any net vertical force would give it infinite acceleration. The two vertical pulls must cancel.</li>
+      <li><b>המיתר לא נקרע.</b> לשני הצדדים יש אותו גובה ב-\(x=0\), בכל רגע.</li>
+      <li><b>אין כוח שקול על הקשר.</b> לקשר אין מסה, ולכן כל כוח אנכי שקול היה נותן לו תאוצה אינסופית. שתי המשיכות האנכיות חייבות לבטל זו את זו.</li>
     </ol>
-    <p>The vertical pull of a string at a point is its <span class="k-ten">tension</span> times its slope (for small slopes). Try it:</p>
+    <p>המשיכה האנכית של מיתר בנקודה היא ה<span class="k-ten">מתיחות</span> שלו כפול השיפוע שלו (לשיפועים קטנים). נסו:</p>
   </div>
   <div class="fig" id="sim-balance">
-    <canvas aria-label="Force diagram: a massless knot pulled by two strings; arrows show their vertical pulls and the net force"></canvas>
+    <canvas aria-label="דיאגרמת כוחות: קשר חסר מסה שנמשך על ידי שני מיתרים; החצים מראים את המשיכות האנכיות שלהם ואת הכוח השקול"></canvas>
     <div class="controls">
-      <div class="slider"><label for="b-slope">slope of string 2</label><input id="b-slope" type="range" min="-0.3" max="1.2" step="0.01" value="0.8"><output id="b-slope-out"></output></div>
-      <div class="slider"><label for="b-ten"><span class="k-ten">tension</span> T₂ / T₁</label><input id="b-ten" type="range" min="-0.3" max="0.3" step="0.01" value="0"><output id="b-ten-out"></output></div>
+      <div class="slider"><label for="b-slope">השיפוע של מיתר 2</label><input id="b-slope" type="range" min="-0.3" max="1.2" step="0.01" value="0.8"><output id="b-slope-out"></output></div>
+      <div class="slider"><label for="b-ten"><span class="k-ten">מתיחות</span> <bdi>T₂ / T₁</bdi></label><input id="b-ten" type="range" min="-0.3" max="0.3" step="0.01" value="0"><output id="b-ten-out"></output></div>
     </div>
     <p class="say" id="b-say" aria-live="polite"></p>
   </div>
   <div class="col">
-    <p>With equal tensions the second rule says "the slope is continuous" (L07). When the tensions differ, it says \(\Teni1\,\dx\psi_L=\Teni2\,\dx\psi_R\) (L08 p.1). L08 builds such a junction from a massless ring sliding on a vertical rod: the rod takes up the sideways difference between the two tensions, so they can differ.</p>
+    <p>כשהמתיחויות שוות, הכלל השני אומר "השיפוע רציף" (הרצאה 07). כשהמתיחויות שונות, הוא אומר \(\Teni1\,\dx\psi_L=\Teni2\,\dx\psi_R\) (הרצאה 08 עמ' 1). בהרצאה 08 בונים נקודת חיבור כזו מטבעת חסרת מסה שמחליקה על מוט אנכי: המוט סופג את ההפרש האופקי בין שתי המתיחויות, ולכן הן יכולות להיות שונות.</p>
   </div>
 </section>
 
 <!-- ================= 2. SOLVE ================= -->
 <section id="solve">
   <div class="col">
-    <div class="eyebrow">2 · L07 p.3–5, L08 p.2</div>
-    <h2>From the two rules to R and T</h2>
-    <p class="q">What shapes come out, for any incoming pulse?</p>
-    <p>On the left the string carries the incoming and the reflected wave together; on the right only the transmitted one. Write each as a shape moving the right way, then apply the two rules at \(x=0\).</p>
+    <div class="eyebrow">2 · הרצאה 07 עמ' 3–5, הרצאה 08 עמ' 2</div>
+    <h2>משני הכללים אל R ו-T</h2>
+    <p class="q">אילו צורות יוצאות, עבור כל פולס נכנס?</p>
+    <p>משמאל המיתר נושא יחד את הגל הנכנס ואת המוחזר; מימין רק את המועבר. כותבים כל אחד כצורה שנעה בכיוון הנכון, ואז מפעילים את שני הכללים ב-\(x=0\).</p>
   </div>
   <div class="deriv col">
-    <h4>Derivation: reflection and transmission coefficients</h4>
+    <h4>פיתוח: מקדמי ההחזרה וההעברה</h4>
     <ol>
-      <li><div class="why">Write the field on each side. The incoming and transmitted shapes move right, the echo moves left (L07 p.1–2).</div>
+      <li><div class="why">כותבים את השדה בכל צד. הצורה הנכנסת והצורה המועברת נעות ימינה, ההד נע שמאלה (הרצאה 07 עמ' 1–2).</div>
         \[\psi_L=\fI\!\left(t-\tfrac{x}{v_1}\right)+\fR\!\left(t+\tfrac{x}{v_1}\right),\qquad \psi_R=\fT\!\left(t-\tfrac{x}{v_2}\right)\]</li>
-      <li><div class="why">Rule 1, the string does not tear: set \(\psi_L=\psi_R\) at \(x=0\).</div>
+      <li><div class="why">כלל 1, המיתר לא נקרע: \(\psi_L=\psi_R\) ב-\(x=0\).</div>
         \[\fI(t)+\fR(t)=\fT(t)\]</li>
-      <li><div class="why">Rule 2, no net force on the knot: \(\Teni1\dx\psi_L=\Teni2\dx\psi_R\) at \(x=0\). The chain rule gives \(\dx f(t\mp x/v)=\mp\tfrac1v f'\).</div>
+      <li><div class="why">כלל 2, אין כוח שקול על הקשר: \(\Teni1\dx\psi_L=\Teni2\dx\psi_R\) ב-\(x=0\). כלל השרשרת נותן \(\dx f(t\mp x/v)=\mp\tfrac1v f'\).</div>
         \[-\frac{\Teni1}{v_1}\fI'+\frac{\Teni1}{v_1}\fR'=-\frac{\Teni2}{v_2}\fT'\]</li>
-      <li><div class="why">Every string enters only through the combination \(\Ten/v\). Give it a name: the <span class="k-z">impedance</span> (L08 p.2). Then integrate in time; the constant is zero because the string is at rest before the pulse arrives.</div>
+      <li><div class="why">כל מיתר נכנס רק דרך הצירוף \(\Ten/v\). נותנים לו שם: ה<span class="k-z">עכבה</span> (הרצאה 08 עמ' 2). אחר כך מבצעים אינטגרציה בזמן; הקבוע הוא אפס, כי המיתר במנוחה לפני שהפולס מגיע.</div>
         \[\Zc\equiv\frac{\Ten}{v}=\sqrt{\Ten\rho}\qquad\Longrightarrow\qquad \Zi1\bigl(\fI-\fR\bigr)=\Zi2\,\fT\]</li>
-      <li><div class="why">Two equations, two unknowns. Put \(\fT=\fI+\fR\) into step 4 and solve for \(\fR\), then for \(\fT\).</div>
+      <li><div class="why">שתי משוואות, שני נעלמים. מציבים \(\fT=\fI+\fR\) בשלב 4 ופותרים עבור \(\fR\), ואז עבור \(\fT\).</div>
         \[\fR(s)=\frac{\Zi1-\Zi2}{\Zi1+\Zi2}\,\fI(s),\qquad \fT(s)=\frac{2\Zi1}{\Zi1+\Zi2}\,\fI(s)\]</li>
     </ol>
     \[\boxed{\ \Rc=\frac{\Zi1-\Zi2}{\Zi1+\Zi2},\qquad \Tc=\frac{2\Zi1}{\Zi1+\Zi2},\qquad 1+\Rc=\Tc\ }\]
-    <div class="check">Check: \(\Rc\) and \(\Tc\) have no units (a ratio of two impedances). Same string, \(\Zi1=\Zi2\): \(\Rc=0,\ \Tc=1\), as if there were no junction. Wall, \(\Zi2\to\infty\): \(\Rc=-1\). And \(1+\Rc=\Tc\) is just rule 1 divided by \(\fI\).</div>
+    <div class="check">בדיקה: ל-\(\Rc\) ול-\(\Tc\) אין יחידות (יחס בין שתי עכבות). אותו מיתר, \(\Zi1=\Zi2\): \(\Rc=0,\ \Tc=1\), כאילו אין נקודת חיבור בכלל. קיר, \(\Zi2\to\infty\): \(\Rc=-1\). ו-\(1+\Rc=\Tc\) הוא פשוט כלל 1 מחולק ב-\(\fI\).</div>
   </div>
   <div class="col">
-    <p><b>Why L07's formula looks different.</b> L07 had one tension for both strings. Then \(\Zc=\Ten/v\) is proportional to \(1/v\), and the same result reads \(\Rc=\frac{v_2-v_1}{v_2+v_1}=\frac{\sqrt{\rho_1}-\sqrt{\rho_2}}{\sqrt{\rho_1}+\sqrt{\rho_2}}\). L08 p.2 gets the general form by replacing every \(v\) with \(1/\Zc\). The \(\Zc\) form is the one that always works.</p>
-    <h3>What the shapes look like (L07 p.3–4)</h3>
-    <p>Put the arguments back in and you get the whole picture, for any pulse shape:</p>
+    <p><b>למה הנוסחה של הרצאה 07 נראית אחרת.</b> בהרצאה 07 הייתה מתיחות אחת לשני המיתרים. אז \(\Zc=\Ten/v\) פרופורציונית ל-\(1/v\), ואותה תוצאה נכתבת \(\Rc=\frac{v_2-v_1}{v_2+v_1}=\frac{\sqrt{\rho_1}-\sqrt{\rho_2}}{\sqrt{\rho_1}+\sqrt{\rho_2}}\). בהרצאה 08 עמ' 2 מקבלים את הצורה הכללית כשמחליפים כל \(v\) ב-\(1/\Zc\). הצורה עם \(\Zc\) היא זו שעובדת תמיד.</p>
+    <h3>איך הצורות נראות (הרצאה 07 עמ' 3–4)</h3>
+    <p>מחזירים את הארגומנטים ומקבלים את התמונה המלאה, לכל צורת פולס:</p>
     \[\psiR(x,t)=\Rc\,\psiI(-x,t),\qquad \psiT(x,t)=\Tc\,\psiI\!\left(\tfrac{v_1}{v_2}x,\ t\right)\]
-    <p><b>The mirror trick.</b> \(\psiI(-x,t)\) is the incoming pulse as if the junction were not there (it would have carried on into \(x&gt;0\)), reflected in a mirror at \(x=0\). The echo is that mirror image times \(\Rc\). Tick "show the mirror trick" in the top figure: the grey dashed pulse is the one that "would have continued", the grey dotted one is its mirror image, and the red echo is the dotted one scaled by \(\Rc\).</p>
-    <p><b>The transmitted pulse</b> has the same shape and the same duration in time, scaled by \(\Tc\). Because it moves \(v_2/v_1\) times faster, it is \(v_2/v_1\) times <em>wider</em> in space: "similar, but faster and wider" (L07 p.4).</p>
-    <h3>The five cases of L07 p.5–8</h3>
+    <p><b>טריק המראה.</b> \(\psiI(-x,t)\) הוא הפולס הנכנס כאילו נקודת החיבור לא קיימת (הוא היה ממשיך אל \(x&gt;0\)), משוקף במראה שנמצאת ב-\(x=0\). ההד הוא תמונת המראה הזו כפול \(\Rc\). סמנו "הצג את טריק המראה" באיור העליון: הפולס האפור המקווקו הוא זה ש"היה ממשיך", האפור המנוקד הוא תמונת המראה שלו, וההד האדום הוא המנוקד מוכפל ב-\(\Rc\).</p>
+    <p><b>הפולס המועבר</b> שומר על אותה צורה ועל אותו משך בזמן, מוכפל ב-\(\Tc\). כיוון שהוא נע מהר יותר פי \(v_2/v_1\), הוא גם <em>רחב</em> יותר פי \(v_2/v_1\) במרחב: "דומה, אבל מהיר ורחב יותר" (הרצאה 07 עמ' 4).</p>
+    <h3>חמשת המקרים של הרצאה 07 עמ' 5–8</h3>
     <div class="tablewrap"><table>
-      <thead><tr><th>What is on the right</th><th>\(\Zi2\)</th><th>\(\Rc\)</th><th>\(\Tc\)</th><th>What you see</th></tr></thead>
+      <thead><tr><th>מה יש מימין</th><th>\(\Zi2\)</th><th>\(\Rc\)</th><th>\(\Tc\)</th><th>מה רואים</th></tr></thead>
       <tbody>
-        <tr><td>wall (infinitely dense)</td><td>\(\infty\)</td><td>\(-1\)</td><td>\(0\)</td><td>the pulse comes back upside down</td></tr>
-        <tr><td>heavier string</td><td>\(&gt;\Zi1\)</td><td>between \(-1\) and \(0\)</td><td>between \(0\) and \(1\)</td><td>inverted echo, smaller pulse goes on</td></tr>
-        <tr><td>the same string</td><td>\(=\Zi1\)</td><td>\(0\)</td><td>\(1\)</td><td>"no boundary at all, everything passes"</td></tr>
-        <tr><td>lighter string</td><td>\(&lt;\Zi1\)</td><td>between \(0\) and \(1\)</td><td>between \(1\) and \(2\)</td><td>upright echo, taller pulse goes on</td></tr>
-        <tr><td>nothing (free end)</td><td>\(0\)</td><td>\(+1\)</td><td>\(2\)</td><td>the pulse comes back upright; the end swings to twice the height</td></tr>
+        <tr><td>קיר (צפוף לאין סוף)</td><td>\(\infty\)</td><td>\(-1\)</td><td>\(0\)</td><td>הפולס חוזר הפוך</td></tr>
+        <tr><td>מיתר כבד יותר</td><td>\(&gt;\Zi1\)</td><td>בין \(-1\) ל-\(0\)</td><td>בין \(0\) ל-\(1\)</td><td>הד הפוך, ופולס קטן יותר ממשיך</td></tr>
+        <tr><td>אותו מיתר</td><td>\(=\Zi1\)</td><td>\(0\)</td><td>\(1\)</td><td>"אין גבול בכלל, הכול עובר"</td></tr>
+        <tr><td>מיתר קל יותר</td><td>\(&lt;\Zi1\)</td><td>בין \(0\) ל-\(1\)</td><td>בין \(1\) ל-\(2\)</td><td>הד ישר, ופולס גבוה יותר ממשיך</td></tr>
+        <tr><td>כלום (קצה חופשי)</td><td>\(0\)</td><td>\(+1\)</td><td>\(2\)</td><td>הפולס חוזר ישר; הקצה מגיע לגובה כפול</td></tr>
       </tbody>
     </table></div>
     <div class="try" id="try-buttons">
-      <button data-try="wall">Show me: wall</button>
-      <button data-try="heavy">heavier</button>
-      <button data-try="same">same</button>
-      <button data-try="light">lighter</button>
-      <button data-try="free">free end</button>
+      <button data-try="wall">הדגמה: קיר</button>
+      <button data-try="heavy">כבד יותר</button>
+      <button data-try="same">אותו מיתר</button>
+      <button data-try="light">קל יותר</button>
+      <button data-try="free">קצה חופשי</button>
     </div>
   </div>
 </section>
@@ -335,275 +352,307 @@ window.MathJax = {
 <!-- ================= 3. MEANING ================= -->
 <section id="meaning">
   <div class="col">
-    <div class="eyebrow">3 · L08 p.2–3 · <span class="he" lang="he">משמעות העכבה</span></div>
-    <h2>What impedance actually is</h2>
-    <p class="q">The left string only ever touches the knot. So what does the whole right-hand string feel like, seen from the knot?</p>
-    <p>Answer: <b>like a damper</b>, a piston in oil that pushes back in proportion to how fast you move it. Shake the end of a long string, and the force you feel is exactly what a damper of constant \(\Zc\) would give. Drag the black handle up and down (or watch it move by itself):</p>
+    <div class="eyebrow">3 · הרצאה 08 עמ' 2–3 · <span class="he" lang="he">משמעות העכבה</span></div>
+    <h2>מהי בעצם עכבה</h2>
+    <p class="q">המיתר השמאלי נוגע רק בקשר. אז איך נראה כל המיתר הימני כשמסתכלים עליו מהקשר?</p>
+    <p>התשובה: <b>כמו בולם</b>, כלומר בוכנה בשמן, שדוחפת בחזרה ביחס ישר למהירות שבה מזיזים אותה. נערו את הקצה של מיתר ארוך, והכוח שתרגישו הוא בדיוק מה שהיה נותן בולם עם קבוע \(\Zc\). גררו את הידית השחורה למעלה ולמטה (או הסתכלו עליה זזה לבד):</p>
   </div>
   <div class="fig" id="sim-shake">
-    <canvas aria-label="Interactive: drag a handle that shakes the end of a string (top) and a damper (bottom); both push back with the same force"></canvas>
+    <canvas aria-label="אינטראקטיבי: גררו ידית שמנערת את קצה המיתר (למעלה) ובולם (למטה); שניהם דוחפים בחזרה באותו כוח"></canvas>
     <div class="controls">
-      <div class="slider"><label for="s-ten"><span class="k-ten">tension</span> T</label><input id="s-ten" type="range" min="5" max="80" step="1" value="20"><output id="s-ten-out"></output></div>
-      <div class="slider"><label for="s-rho">density ρ</label><input id="s-rho" type="range" min="1" max="40" step="1" value="4"><output id="s-rho-out"></output></div>
-      <div class="btns"><button id="s-play">Pause</button></div>
+      <div class="slider"><label for="s-ten"><span class="k-ten">מתיחות</span> T</label><input id="s-ten" type="range" min="5" max="80" step="1" value="20"><output id="s-ten-out"></output></div>
+      <div class="slider"><label for="s-rho">צפיפות ρ</label><input id="s-rho" type="range" min="1" max="40" step="1" value="4"><output id="s-rho-out"></output></div>
+      <div class="btns"><button id="s-play">השהה</button></div>
     </div>
     <div class="readout">
-      <div><span class="lab">wave speed v</span><span class="val" id="s-v"></span></div>
-      <div><span class="lab">impedance Z = √(Tρ)</span><span class="val k-z" id="s-Z"></span></div>
-      <div><span class="lab">hand velocity v_y</span><span class="val k-vy" id="s-vy"></span></div>
-      <div><span class="lab">force from string</span><span class="val k-z" id="s-F"></span></div>
-      <div><span class="lab">force from damper</span><span class="val" id="s-Fd"></span></div>
+      <div><span class="lab">מהירות הגל v</span><span class="val" id="s-v"></span></div>
+      <div><span class="lab">עכבה <bdi>Z = √(Tρ)</bdi></span><span class="val k-z" id="s-Z"></span></div>
+      <div><span class="lab">מהירות היד <bdi>v_y</bdi></span><span class="val k-vy" id="s-vy"></span></div>
+      <div><span class="lab">הכוח מהמיתר</span><span class="val k-z" id="s-F"></span></div>
+      <div><span class="lab">הכוח מהבולם</span><span class="val" id="s-Fd"></span></div>
     </div>
-    <p class="cap"><span class="k-vy">Pink arrow</span>: the velocity \(\vy\) of the hand. <span class="k-z">Violet arrow</span>: the force pushing back on the hand. The string's force is computed from the string's own slope at the end (\(\Ten\,\dx\psi\)); the damper's from \(-\Zc\vy\). On wider screens two force traces appear on the right, and they lie on top of each other. Raise the tension or the density and the push-back grows. (Real numbers; the string is shown in slow motion, and a full lane height is 2 cm of real displacement.)</p>
+    <p class="cap"><span class="k-vy">חץ ורוד</span>: המהירות \(\vy\) של היד. <span class="k-z">חץ סגול</span>: הכוח שדוחף בחזרה על היד. הכוח של המיתר מחושב מהשיפוע של המיתר עצמו בקצה (\(\Ten\,\dx\psi\)); הכוח של הבולם מ-\(-\Zc\vy\). במסכים רחבים מופיעים מימין שני גרפים של הכוח, והם מונחים זה על זה בדיוק. הגדילו את המתיחות או את הצפיפות, והדחיפה בחזרה גדלה. (ערכים אמיתיים; המיתר מוצג בהילוך איטי, וגובה רצועה מלא שווה ל-<bdi>2 cm</bdi> של העתק אמיתי.)</p>
   </div>
   <div class="deriv col">
-    <h4>Derivation: the string beyond the knot is a damper (L08 p.2–3)</h4>
+    <h4>פיתוח: המיתר שמעבר לקשר הוא בולם (הרצאה 08 עמ' 2–3)</h4>
     <ol>
-      <li><div class="why">The vertical force of string 2 on the knot is its tension times its slope there.</div>
+      <li><div class="why">הכוח האנכי של מיתר 2 על הקשר הוא המתיחות שלו כפול השיפוע שלו שם.</div>
         \[F_y=\Teni2\,\dx\psi_R\big|_{x=0}\]</li>
-      <li><div class="why">String 2 carries only a wave moving away, \(\fT(t-x/v_2)\). For such a wave the slope is fixed by the velocity: \(\dx\fT=-\tfrac1{v_2}\dt\fT\).</div>
+      <li><div class="why">מיתר 2 נושא רק גל שמתרחק, \(\fT(t-x/v_2)\). לגל כזה השיפוע נקבע לפי המהירות: \(\dx\fT=-\tfrac1{v_2}\dt\fT\).</div>
         \[F_y=-\frac{\Teni2}{v_2}\,\dt\psi_R\big|_{x=0}\]</li>
-      <li><div class="why">\(\Teni2/v_2\) is \(\Zi2\), and \(\dt\psi\) at the knot is its velocity \(\vy\).</div>
+      <li><div class="why">\(\Teni2/v_2\) הוא \(\Zi2\), ו-\(\dt\psi\) בקשר היא המהירות שלו, \(\vy\).</div>
         \[\boxed{\ F_y=-\Zc\,\vy\ }\]</li>
     </ol>
-    <div class="check">Check: units \(\mathrm{N}/(\mathrm{m/s})=\mathrm{kg/s}\) ✓. The minus sign: the force always opposes the motion, like friction. "A large impedance means strong damping" (L08 p.3). Condition: step 2 needs a wave moving <em>away</em> only. If something comes back (a second junction, a wall far away), the string is no longer a pure damper; that is how standing waves arise in section 6.</div>
+    <div class="check">בדיקה: יחידות \(\mathrm{N}/(\mathrm{m/s})=\mathrm{kg/s}\) ✓. סימן המינוס: הכוח תמיד מתנגד לתנועה, כמו חיכוך. "עכבה גדולה פירושה ריסון חזק" (הרצאה 08 עמ' 3). תנאי: שלב 2 דורש גל שרק <em>מתרחק</em>. אם משהו חוזר (נקודת חיבור שנייה, קיר רחוק), המיתר כבר לא בולם טהור; כך נוצרים גלים עומדים, בסעיף 6.</div>
   </div>
   <div class="col">
-    <p>That is the purpose of \(\Zc\): <b>it replaces the whole string beyond a point by one number</b>, the ratio of force to velocity. That is also why the junction "sees" only \(\Zi1\) and \(\Zi2\), and why two strings with the same \(\Zc\) look identical to it, whatever their \(\rho\) and \(\Ten\) separately (L08 p.3–4).</p>
-    <div class="key"><b>Why \(\sqrt{\Ten\rho}\)?</b> <span class="mine">mine, a picture</span> Move the end up at speed \(\vy\). In one second the wave front runs a distance \(v\) along the string, so a length \(v\) of string, of mass \(\rho v\), goes from rest to speed \(\vy\). The momentum you hand out per second is \(\rho v\cdot\vy\), and momentum per second is force: \(F=\rho v\,\vy\). So \(\Zc=\rho v=\rho\sqrt{\Ten/\rho}=\sqrt{\Ten\rho}\). Heavier string: more mass to set moving. Tighter string: the front runs faster and recruits more string each second. Both raise \(\Zc\).</div>
-    <p><b>Where does the energy go?</b> A real damper turns your work into heat. The string does not: it carries the energy away as a wave, and a load far away can collect it (Crawford 4.4). That is why "impedance" and not "friction": the string resists like a damper, but it passes the energy on.</p>
+    <p>זה התפקיד של \(\Zc\): <b>היא מחליפה את כל המיתר שמעבר לנקודה במספר אחד</b>, היחס בין כוח למהירות. זו גם הסיבה שנקודת החיבור "רואה" רק את \(\Zi1\) ו-\(\Zi2\), ושני מיתרים עם אותה \(\Zc\) נראים לה זהים, לא משנה מה ה-\(\rho\) וה-\(\Ten\) של כל אחד בנפרד (הרצאה 08 עמ' 3–4).</p>
+    <div class="key"><b>למה \(\sqrt{\Ten\rho}\)?</b> <span class="mine">תוספת שלי, תמונה</span> הזיזו את הקצה למעלה במהירות \(\vy\). בשנייה אחת חזית הגל רצה מרחק \(v\) לאורך המיתר, כך שקטע מיתר באורך \(v\), שמסתו \(\rho v\), עובר ממנוחה למהירות \(\vy\). התנע שאתם מעבירים בכל שנייה הוא \(\rho v\cdot\vy\), ותנע לשנייה הוא כוח: \(F=\rho v\,\vy\). לכן \(\Zc=\rho v=\rho\sqrt{\Ten/\rho}=\sqrt{\Ten\rho}\). מיתר כבד יותר: יותר מסה להניע. מיתר מתוח יותר: החזית רצה מהר יותר ומגייסת יותר מיתר בכל שנייה. שניהם מגדילים את \(\Zc\).</div>
+    <p><b>לאן הולכת האנרגיה?</b> בולם אמיתי הופך את העבודה שלכם לחום. המיתר לא: הוא מוביל את האנרגיה הלאה כגל, ועומס רחוק יכול לקלוט אותה (Crawford 4.4). לכן "עכבה" ולא "חיכוך": המיתר מתנגד כמו בולם, אבל מעביר את האנרגיה הלאה.</p>
   </div>
 </section>
 
 <!-- ================= 4. MATCHING ================= -->
 <section id="matching">
   <div class="col">
-    <div class="eyebrow">4 · L08 p.3–6 · <span class="he" lang="he">תיאום עכבות</span></div>
-    <h2>Matching: when the junction disappears</h2>
-    <p class="q">When does everything pass through? And is a "softer" second string better?</p>
-    <p>\(\Rc=0\) exactly when \(\Zi1=\Zi2\). This is <b>impedance matching</b>. The second string then pushes back on the knot exactly as the first string itself would, so the knot cannot tell that anything changed. Drag along the curve:</p>
+    <div class="eyebrow">4 · הרצאה 08 עמ' 3–6 · <span class="he" lang="he">תיאום עכבות</span></div>
+    <h2>תיאום: כשנקודת החיבור נעלמת</h2>
+    <p class="q">מתי הכול עובר? והאם מיתר שני "רך" יותר עדיף?</p>
+    <p>\(\Rc=0\) בדיוק כאשר \(\Zi1=\Zi2\). זה <b>תיאום עכבות</b>. המיתר השני דוחף אז את הקשר בחזרה בדיוק כמו שהמיתר הראשון עצמו היה דוחף, ולכן הקשר לא יכול לדעת שמשהו השתנה. גררו לאורך העקומה:</p>
   </div>
   <div class="fig" id="sim-curves">
-    <canvas aria-label="Plot of R, T, R_E and T_E against Z2/Z1 on a log scale, with a draggable marker"></canvas>
+    <canvas aria-label="גרף של R, T, R_E ו-T_E כפונקציה של Z2/Z1 בסקאלה לוגריתמית, עם סמן שאפשר לגרור"></canvas>
     <div class="controls">
-      <div class="slider"><label for="c-zr">impedance ratio Z₂ / Z₁</label><input id="c-zr" type="range" min="-2" max="2" step="0.01" value="-1"><output id="c-zr-out"></output></div>
+      <div class="slider"><label for="c-zr">יחס העכבות <bdi>Z₂ / Z₁</bdi></label><input id="c-zr" type="range" min="-2" max="2" step="0.01" value="-1"><output id="c-zr-out"></output></div>
     </div>
     <div class="readout">
       <div><span class="lab">R</span><span class="val k-r" id="c-R"></span></div>
       <div><span class="lab">T</span><span class="val k-t" id="c-T"></span></div>
-      <div><span class="lab">R_E (power back)</span><span class="val k-r" id="c-RE"></span></div>
-      <div><span class="lab">T_E (power through)</span><span class="val k-t" id="c-TE"></span></div>
+      <div><span class="lab"><bdi>R_E</bdi> (הספק חוזר)</span><span class="val k-r" id="c-RE"></span></div>
+      <div><span class="lab"><bdi>T_E</bdi> (הספק עובר)</span><span class="val k-t" id="c-TE"></span></div>
     </div>
     <p class="say" id="c-say" aria-live="polite"></p>
-    <p class="cap">Solid: heights \(\Rc\) (red) and \(\Tc\) (green). Dashed: power fractions \(\RE\) and \(\TE\) (section 5). Drag on the plot or use the slider.</p>
+    <p class="cap">קו רציף: הגבהים \(\Rc\) (אדום) ו-\(\Tc\) (ירוק). מקווקו: חלקי ההספק \(\RE\) ו-\(\TE\) (סעיף 5). גררו על הגרף או השתמשו במחוון.</p>
   </div>
   <div class="col">
-    <h3>The trap the lecturer warns about (L08 p.4)</h3>
-    <p>"One might think transmission would be better for a low impedance, as if there were less resistance. <span class="he" lang="he">זה לא נכון</span>!" Go left on the curve. \(\Tc\) climbs towards 2, so the transmitted pulse is <em>taller</em>. But the power through, \(\TE\), falls to zero. Why: a low-impedance string barely pushes back on the knot (\(F_y=-\Zi2\vy\) is tiny), and power is force times velocity. A big wiggle with no force behind it carries almost nothing. At \(\Zi2=0\) the end is free: it swings to twice the height and delivers no power at all.</p>
-    <h3>Same impedance, different speed</h3>
-    <p>Matching is about \(\Zc\), not about the speed. The lecture's example (L08 p.3): \(\Teni2=3\Teni1\) and \(\rho_2=\rho_1/3\). Then \(\Zi2=\sqrt{3\Teni1\cdot\rho_1/3}=\Zi1\), matched, while \(v_2=\sqrt{3\Teni1/(\rho_1/3)}=3v_1\).</p>
-    <div class="try"><button data-try="matched">Show me: no echo, yet three times faster and wider</button></div>
-    <h3>The same rule in a circuit (L08 p.4–5)</h3>
-    <p>Read \(\Zc=F/v\) with force → voltage \(V\) and velocity → current \(I\): it becomes \(R=V/I\), Ohm's law. A source with internal resistance \(R_S\) feeds a load \(R_L\). The load receives \(P_L=V^2R_L/(R_S+R_L)^2\), and setting \(\partial P_L/\partial R_L=0\) gives \(R_L=R_S\): the load must match the source.</p>
-    <p><b>Complex impedance (L08 p.6).</b> Capacitors and coils make the "resistance" complex; it is then called impedance, and its complex part "simply describes a phase difference between the source and the load". Matching still decides how much power gets through, which is why it matters for transmission lines and antennas.</p>
+    <h3>המלכודת שהמרצה מזהיר ממנה (הרצאה 08 עמ' 4)</h3>
+    <p>"אפשר היה לחשוב שההעברה תהיה טובה יותר כשהעכבה נמוכה, כאילו יש פחות התנגדות. <span class="he" lang="he">זה לא נכון</span>!" זוזו שמאלה על העקומה. \(\Tc\) עולה לכיוון 2, כלומר הפולס המועבר <em>גבוה</em> יותר. אבל ההספק שעובר, \(\TE\), יורד לאפס. למה? מיתר בעל עכבה נמוכה כמעט לא דוחף את הקשר בחזרה (\(F_y=-\Zi2\vy\) זעיר), והספק הוא כוח כפול מהירות. תנודה גדולה בלי כוח מאחוריה כמעט לא מעבירה כלום. ב-\(\Zi2=0\) הקצה חופשי: הוא מגיע לגובה כפול ולא מעביר הספק בכלל.</p>
+    <h3>אותה עכבה, מהירות אחרת</h3>
+    <p>תיאום הוא עניין של \(\Zc\), לא של מהירות. הדוגמה מההרצאה (הרצאה 08 עמ' 3): \(\Teni2=3\Teni1\) ו-\(\rho_2=\rho_1/3\). אז \(\Zi2=\sqrt{3\Teni1\cdot\rho_1/3}=\Zi1\), כלומר מתואם, ובאותו זמן \(v_2=\sqrt{3\Teni1/(\rho_1/3)}=3v_1\).</p>
+    <div class="try"><button data-try="matched">הדגמה: אין הד, ובכל זאת מהיר ורחב פי שלושה</button></div>
+    <h3>אותו כלל במעגל חשמלי (הרצאה 08 עמ' 4–5)</h3>
+    <p>קראו את \(\Zc=F/v\) כשהכוח מוחלף במתח \(V\) והמהירות בזרם \(I\): מקבלים \(R=V/I\), חוק אוהם. מקור עם התנגדות פנימית \(R_S\) מזין עומס \(R_L\). העומס מקבל \(P_L=V^2R_L/(R_S+R_L)^2\), והדרישה \(\partial P_L/\partial R_L=0\) נותנת \(R_L=R_S\): העומס חייב להיות מתואם למקור.</p>
+    <p><b>עכבה מרוכבת (הרצאה 08 עמ' 6).</b> קבלים וסלילים הופכים את ה"התנגדות" למרוכבת; אז קוראים לה עכבה, והחלק המרוכב שלה "פשוט מתאר הפרש פאזה בין המקור לעומס". התיאום עדיין קובע כמה הספק עובר, ולכן הוא חשוב בקווי תמסורת ובאנטנות.</p>
   </div>
   <div class="fig" id="sim-circuit">
-    <canvas aria-label="Plot of the power delivered to a load against R_L / R_S, peaking at 1"></canvas>
+    <canvas aria-label="גרף של ההספק שמגיע לעומס כפונקציה של R_L / R_S, עם שיא ב-1"></canvas>
     <div class="controls">
-      <div class="slider"><label for="k-rl">load R_L / R_S</label><input id="k-rl" type="range" min="-1.3" max="1.3" step="0.01" value="-0.7"><output id="k-rl-out"></output></div>
+      <div class="slider"><label for="k-rl">עומס <bdi>R_L / R_S</bdi></label><input id="k-rl" type="range" min="-1.3" max="1.3" step="0.01" value="-0.7"><output id="k-rl-out"></output></div>
     </div>
-    <div class="readout"><div><span class="lab">share of the maximum power</span><span class="val k-z" id="k-P"></span></div></div>
-    <p class="cap"><span class="mine">mine, a connection</span> Divided by its maximum \(V^2/4R_S\), the load power is \(\dfrac{4R_SR_L}{(R_S+R_L)^2}\). That is exactly \(\TE=\dfrac{4\Zi1\Zi2}{(\Zi1+\Zi2)^2}\) of the strings, the dashed green curve above. Same curve, same peak at "equal".</p>
+    <div class="readout"><div><span class="lab">החלק מההספק המרבי</span><span class="val k-z" id="k-P"></span></div></div>
+    <p class="cap"><span class="mine">תוספת שלי, קישור</span> אחרי חלוקה בערך המרבי \(V^2/4R_S\), הספק העומס הוא \(\dfrac{4R_SR_L}{(R_S+R_L)^2}\). זה בדיוק \(\TE=\dfrac{4\Zi1\Zi2}{(\Zi1+\Zi2)^2}\) של המיתרים, הקו הירוק המקווקו בגרף שלמעלה. אותה עקומה, ואותו שיא ב"שווים".</p>
   </div>
   <div class="col">
-    <h3>The megaphone (<span class="he" lang="he">מגהפון</span>, L08 p.6): change slowly</h3>
-    <p>Sometimes you cannot pick \(\Zi2\); the two media are given (a loudspeaker and the room, a probe and skin). The fix: join them through a region whose impedance changes <em>gradually</em>, slowly compared with the wavelength. Each small step reflects a tiny wave, and over a long taper these tiny echoes cancel each other. Compare an abrupt jump with a gradual one of the same total size:</p>
+    <h3><span class="he" lang="he">המגהפון</span> (הרצאה 08 עמ' 6): לשנות לאט</h3>
+    <p>לפעמים אי אפשר לבחור את \(\Zi2\); שני התווכים נתונים (רמקול והחדר, מתמר ועור). הפתרון: לחבר אותם דרך אזור שבו העכבה משתנה <em>בהדרגה</em>, לאט ביחס לאורך הגל. כל מדרגה קטנה מחזירה גל זעיר, ולאורך מעבר ארוך ההדים הזעירים האלה מבטלים זה את זה. השוו קפיצה חדה למעבר הדרגתי באותו גודל כולל:</p>
   </div>
   <div class="fig" id="sim-taper">
-    <canvas aria-label="Two numerical strings: an abrupt impedance step reflects a wave packet; a gradual taper of the same total ratio barely reflects"></canvas>
+    <canvas aria-label="שני מיתרים נומריים: מדרגת עכבה חדה מחזירה חבורת גלים; מעבר הדרגתי עם אותו יחס כולל כמעט לא מחזיר"></canvas>
     <div class="controls">
-      <div class="slider"><label for="h-len">length of the gradual part</label><input id="h-len" type="range" min="0.1" max="1.5" step="0.05" value="0.5"><output id="h-len-out"></output></div>
-      <div class="btns"><button id="h-play">Pause</button><button id="h-restart">Restart</button></div>
+      <div class="slider"><label for="h-len">אורך החלק ההדרגתי</label><input id="h-len" type="range" min="0.1" max="1.5" step="0.05" value="0.5"><output id="h-len-out"></output></div>
+      <div class="btns"><button id="h-play">השהה</button><button id="h-restart">התחל מחדש</button></div>
     </div>
     <div class="readout">
-      <div><span class="lab">power reflected, abrupt</span><span class="val k-r" id="h-abrupt"></span></div>
-      <div><span class="lab">power reflected, gradual</span><span class="val k-r" id="h-taper"></span></div>
+      <div><span class="lab">הספק מוחזר, מעבר חד</span><span class="val k-r" id="h-abrupt"></span></div>
+      <div><span class="lab">הספק מוחזר, מעבר הדרגתי</span><span class="val k-r" id="h-taper"></span></div>
     </div>
-    <p class="cap"><span class="mine">mine, a numerical demo</span> A string of 2600 point masses (part of it off screen), solved step by step; the shaded band is \(\Zc(x)\). The abrupt jump (\(\Zc\times3\)) reflects \(\RE=\big(\tfrac{1-3}{1+3}\big)^2=25\%\), and the simulation measures that too, which checks it. λ is the wavelength on the light side. Even half a wavelength of taper cuts the echo to about 1%. Ultrasound gel does the same job: it removes the air layer, a huge impedance jump, between the probe and the skin.</p>
+    <p class="cap"><span class="mine">תוספת שלי, הדגמה נומרית</span> מיתר של 2600 מסות נקודתיות (חלקו מחוץ למסך), שנפתר צעד אחר צעד; הרצועה המוצללת היא \(\Zc(x)\). הקפיצה החדה (\(\Zc\times3\)) מחזירה \(\RE=\big(\tfrac{1-3}{1+3}\big)^2=25\%\), והסימולציה מודדת בדיוק את זה, כך שזו גם בדיקה שלה. λ הוא אורך הגל בצד הקל. אפילו חצי אורך גל של מעבר הדרגתי מוריד את ההד לכ-1%. ג'ל של אולטרסאונד עושה את אותה עבודה: הוא מסלק את שכבת האוויר שבין המתמר לעור, שהיא קפיצת עכבה עצומה.</p>
   </div>
   <div class="col">
-    <div class="key"><b>How it's examined.</b> Reflection and transmission at a junction is among the most regular topics of the course: in 12 of the 13 finals since 2020 and in 8 of 14 past quizzes. Impedance and matching come in 5 of those finals and 9 quizzes. The usual forms: \(\Rc\), \(\Tc\) and the share of power that crosses at a junction, or the concept question "what is matching, and why not \(\Zi2=0\)?" (counts from the course's exam map).</div>
+    <h3>מיתר באמצע (תרגול 6, דוגמה 4)</h3>
+    <p class="q">מיתר 1 ומיתר 2 נתונים, והם לא מתואמים. האם מיתר שלישי ביניהם יכול לעזור?</p>
+    <p>שמים ביניהם מיתר אמצעי עם עכבה \(\Zi{m}\) ואורך \(L\) (אותה מתיחות בכל המיתרים). עכשיו יש שתי נקודות חיבור, וגלים קופצים הלוך ושוב בתוך המיתר האמצעי. בתרגול 6 שואלים שתי שאלות.</p>
+    <p><b>פולס קצר.</b> הפולס הראשון שיוצא עבר כל אחת משתי נקודות החיבור פעם אחת, ולכן הגובה שלו הוא \(\Tc_{1m}\Tc_{m2}=\frac{4\Zi1\Zi{m}}{(\Zi1+\Zi{m})(\Zi{m}+\Zi2)}\). הוא מקסימלי כאשר \(\Zi{m}=\sqrt{\Zi1\Zi2}\), הממוצע הגאומטרי (\(\rho_m=\sqrt{\rho_1\rho_2}\)). עבור \(\rho_2=9\rho_1\), כלומר \(\Zi2=3\Zi1\): חיבור ישיר מעביר 75% מהאנרגיה; עם המיתר האמצעי הפולס הראשון לבדו נושא 86.2%. שתי מדרגות קטנות מפסידות פחות ממדרגה אחת גדולה.</p>
+    <p><b>גל רציף בתדירות אחת \(\omega_0\).</b> עכשיו ההדים משתי נקודות החיבור חופפים ומתאבכים. בוחרים את אורך המיתר האמצעי לרבע מאורך הגל שלו, \(L=\lambda_m/4\). ההד מנקודת החיבור הרחוקה עובר דרך נוספת של \(2L=\lambda_m/2\), חצי אורך גל, ולכן חוזר במופע הפוך. עם \(\Zi{m}=\sqrt{\Zi1\Zi2}\) שתי נקודות החיבור מחזירות באותה מידה (\(r_{1m}=r_{m2}\)), ולכן ההדים מבטלים זה את זה בדיוק:</p>
+    \[r_{\rm tot}=\frac{r_{1m}+r_{m2}\,q}{1+r_{1m}r_{m2}\,q},\quad q=e^{-2ik_mL};\qquad L=\frac{\lambda_m}{4},\ \Zi{m}=\sqrt{\Zi1\Zi2}\ \Rightarrow\ q=-1,\ r_{\rm tot}=0\]
+    <p>בתדירות \(\omega_0\) כל ההספק עובר, למרות ש-\(\Zi1\ne\Zi2\). זה אותו טריק כמו הציפוי נגד השתקפויות במשקפיים ובעדשות מצלמה (באור, בהמשך הקורס).</p>
+  </div>
+  <div class="fig" id="sim-quarter">
+    <canvas aria-label="הספק מוחזר כפונקציה של התדירות, לשני מיתרים שמחוברים דרך מיתר אמצעי, בהשוואה לחיבור ישיר"></canvas>
+    <div class="controls">
+      <div class="slider"><label for="q-zm">עכבת המיתר האמצעי <bdi>Z<sub>m</sub></bdi></label><input id="q-zm" type="range" min="0" max="0.477" step="0.001" value="0.239"><output id="q-zm-out"></output></div>
+      <div class="slider"><label for="q-len">אורך <bdi>L</bdi> (ביחידות <bdi>λ<sub>m</sub></bdi> בתדירות <bdi>ω₀</bdi>)</label><input id="q-len" type="range" min="0.05" max="0.75" step="0.01" value="0.25"><output id="q-len-out"></output></div>
+      <div class="btns"><button data-qpreset>רבע אורך גל, <bdi>Z<sub>m</sub> = √(Z₁Z₂)</bdi></button></div>
+    </div>
+    <div class="readout">
+      <div><span class="lab">הספק שעובר ב-<bdi>ω₀</bdi></span><span class="val k-t" id="q-at"></span></div>
+      <div><span class="lab">הפולס הראשון (פולס קצר)</span><span class="val k-t" id="q-first"></span></div>
+      <div><span class="lab">חיבור ישיר</span><span class="val k-t">75%</span></div>
+    </div>
+    <p class="cap">למיתר 2 יש \(\Zi2=3\Zi1\), כמו בתרגול. העקומה הסגולה היא ההספק המוחזר של גל רציף, בכל תדירות. בהגדרות של רבע אורך גל היא יורדת לאפס ב-\(\omega_0\) (וגם ב-\(3\omega_0\)). ב-\(2\omega_0\) המיתר האמצעי באורך של חצי אורך גל, וההחזרה חוזרת ל-25% של החיבור הישיר. הזזת \(\Zi{m}\) מ-\(\sqrt3\,\Zi1\) מרימה את המינימום מעל האפס.</p>
+  </div>
+  <div class="col">
+    <div class="key"><b>איך זה נבחן.</b> החזרה והעברה בנקודת חיבור היא מהנושאים הקבועים ביותר בקורס: ב-12 מתוך 13 המבחנים הסופיים מאז 2020, וב-8 מתוך 14 בחנים קודמים. עכבה ותיאום מופיעים ב-5 מהמבחנים האלה וב-9 בחנים. הצורות הנפוצות: \(\Rc\), \(\Tc\) וחלק ההספק שעובר בנקודת חיבור, או שאלת ההבנה "מהו תיאום, ולמה לא \(\Zi2=0\)?" (הספירות לקוחות ממפת המבחנים של הקורס).</div>
   </div>
 </section>
 
 <!-- ================= 5. ENERGY ================= -->
 <section id="energy">
   <div class="col">
-    <div class="eyebrow">5 · L09 p.1–5 · <span class="he" lang="he">אנרגיה של גל</span></div>
-    <h2>Energy: impedance is also the power price</h2>
-    <p class="q">A wave carries energy along. How much power, and how is it shared at a junction?</p>
-    <p>A small piece \(dx\) of string has two kinds of energy. It moves, so it has kinetic energy \(\tfrac12(\rho\,dx)\vy^2\). It is bent, so it is stretched a little, by \(\tfrac12(\dx\psi)^2dx\); that costs \(\Ten\) times the stretch, potential energy \(\tfrac12\Ten(\dx\psi)^2dx\) (L09 p.1–2). Per metre:</p>
+    <div class="eyebrow">5 · הרצאה 09 עמ' 1–5 · <span class="he" lang="he">אנרגיה של גל</span></div>
+    <h2>אנרגיה: העכבה היא גם המחיר של ההספק</h2>
+    <p class="q">גל מוביל איתו אנרגיה. כמה הספק, ואיך הוא מתחלק בנקודת חיבור?</p>
+    <p>לקטע קטן \(dx\) של מיתר יש שני סוגי אנרגיה. הוא זז, ולכן יש לו אנרגיה קינטית \(\tfrac12(\rho\,dx)\vy^2\). הוא כפוף, ולכן הוא מתארך מעט, ב-\(\tfrac12(\dx\psi)^2dx\); זה עולה \(\Ten\) כפול ההתארכות, כלומר אנרגיה פוטנציאלית \(\tfrac12\Ten(\dx\psi)^2dx\) (הרצאה 09 עמ' 1–2). למטר:</p>
     \[\mathcal E=\tfrac12\rho\,(\dt\psi)^2+\tfrac12\Ten\,(\dx\psi)^2\]
   </div>
   <div class="deriv col">
-    <h4>Derivation: power carried by a wave (L09 p.3–4)</h4>
+    <h4>פיתוח: ההספק שגל מוביל (הרצאה 09 עמ' 3–4)</h4>
     <ol>
-      <li><div class="why">Power is force times velocity. The string on the left of a point pulls the string on its right with the vertical force \(-\Ten\dx\psi\), and that point moves at \(\vy=\dt\psi\).</div>
+      <li><div class="why">הספק הוא כוח כפול מהירות. המיתר שמשמאל לנקודה מושך את המיתר שמימינה בכוח אנכי \(-\Ten\dx\psi\), והנקודה הזו נעה במהירות \(\vy=\dt\psi\).</div>
         \[P=-\Ten\,\dx\psi\,\dt\psi\]</li>
-      <li><div class="why">For a wave moving right, the slope is fixed by the velocity, \(\dx\psi=-\tfrac1v\dt\psi\) (the same step as in section 3).</div>
+      <li><div class="why">לגל שנע ימינה, השיפוע נקבע לפי המהירות, \(\dx\psi=-\tfrac1v\dt\psi\) (אותו צעד כמו בסעיף 3).</div>
         \[P=\frac{\Ten}{v}(\dt\psi)^2\]</li>
-      <li><div class="why">\(\Ten/v=\Zc\) again. The power is the impedance times the velocity squared. The same step shows kinetic = potential, so \(\mathcal E=\rho(\dt\psi)^2\) and \(P=v\,\mathcal E\).</div>
-        \[\boxed{\ P=\Zc\,(\dt\psi)^2=v\,\mathcal E\ }\quad\text{(right-mover; a left-mover has }P=-\Zc(\dt\psi)^2)\]</li>
-      <li><div class="why">At the junction, all three waves have the same time profile at \(x=0\), scaled by 1, \(\Rc\), \(\Tc\). The echo moves in string 1 (\(\Zi1\)), the transmitted wave in string 2 (\(\Zi2\)). Compare their powers with the incoming one (L09 p.4–5).</div>
+      <li><div class="why">שוב \(\Ten/v=\Zc\). ההספק הוא העכבה כפול ריבוע המהירות. מאותו צעד יוצא גם שקינטית = פוטנציאלית, ולכן \(\mathcal E=\rho(\dt\psi)^2\) ו-\(P=v\,\mathcal E\). זה לגל שנע ימינה; לגל שנע שמאלה סימן ההספק מתהפך.</div>
+        \[\boxed{\ P=\Zc\,(\dt\psi)^2=v\,\mathcal E\ }\]<div class=\"why\">(לגל שנע ימינה; לגל שנע שמאלה \(P=-\Zc(\dt\psi)^2\).)</div></li>
+      <li><div class="why">בנקודת החיבור, לשלושת הגלים יש אותו פרופיל בזמן ב-\(x=0\), מוכפל ב-1, \(\Rc\), \(\Tc\). ההד נע במיתר 1 (\(\Zi1\)), והגל המועבר במיתר 2 (\(\Zi2\)). משווים את ההספקים שלהם להספק הנכנס (הרצאה 09 עמ' 4–5).</div>
         \[\RE=\left|\frac{P_r}{P_i}\right|=\frac{\Zi1\Rc^2}{\Zi1}=\Rc^2,\qquad \TE=\left|\frac{P_t}{P_i}\right|=\frac{\Zi2}{\Zi1}\Tc^2=\frac{4\Zi1\Zi2}{(\Zi1+\Zi2)^2}\]</li>
     </ol>
     \[\boxed{\ \RE=\Rc^2,\qquad \TE=\frac{\Zi2}{\Zi1}\,\Tc^2,\qquad \RE+\TE=\frac{(\Zi1-\Zi2)^2+4\Zi1\Zi2}{(\Zi1+\Zi2)^2}=1\ }\]
-    <div class="check">Check: units of \(\Zc(\dt\psi)^2\) are \(\mathrm{kg/s}\cdot\mathrm{m^2/s^2}=\mathrm{W}\) ✓. Energy is conserved at the junction ✓. Trap: \(\Tc^2\) alone is <em>not</em> the power fraction. \(\Tc\) compares heights; power also needs the impedance of the string it travels on, hence the factor \(\Zi2/\Zi1\).</div>
+    <div class="check">בדיקה: היחידות של \(\Zc(\dt\psi)^2\) הן \(\mathrm{kg/s}\cdot\mathrm{m^2/s^2}=\mathrm{W}\) ✓. האנרגיה נשמרת בנקודת החיבור ✓. מלכודת: \(\Tc^2\) לבדו <em>אינו</em> חלק ההספק. \(\Tc\) משווה גבהים; להספק צריך גם את העכבה של המיתר שבו הגל נע, ומכאן הגורם \(\Zi2/\Zi1\).</div>
   </div>
   <div class="col">
-    <p>So \(\Zc\) has a second job: <b>it converts "how fast the string moves" into "how much power flows"</b>. The same string motion carries more power on a high-impedance string. The figure shows where the energy sits. Switch between a travelling and a standing wave:</p>
+    <p>אז ל-\(\Zc\) יש תפקיד שני: <b>היא ממירה "כמה מהר המיתר זז" ל"כמה הספק זורם"</b>. אותה תנועה של המיתר מובילה יותר הספק על מיתר בעל עכבה גבוהה. האיור מראה איפה האנרגיה נמצאת. החליפו בין גל נע לגל עומד:</p>
   </div>
   <div class="fig" id="sim-energy">
-    <canvas aria-label="A wave on a string with its kinetic and potential energy density and its power plotted underneath"></canvas>
+    <canvas aria-label="גל על מיתר, ומתחתיו צפיפות האנרגיה הקינטית והפוטנציאלית שלו וההספק שלו"></canvas>
     <div class="controls">
-      <div class="btns" role="group" aria-label="Kind of wave"><button data-ekind="travel">Travelling wave</button><button data-ekind="stand">Standing wave</button></div>
-      <div class="btns"><button id="e-play">Pause</button></div>
+      <div class="btns" role="group" aria-label="סוג הגל"><button data-ekind="travel">גל נע</button><button data-ekind="stand">גל עומד</button></div>
+      <div class="btns"><button id="e-play">השהה</button></div>
     </div>
-    <div class="readout"><div><span class="lab">power averaged over a period</span><span class="val k-z" id="e-avg"></span></div></div>
+    <div class="readout"><div><span class="lab">הספק ממוצע על פני מחזור</span><span class="val k-z" id="e-avg"></span></div></div>
     <p class="say" id="e-say" aria-live="polite"></p>
   </div>
   <div class="col">
-    <p><b>Momentum.</b> To first order a string wave carries energy forward but no momentum: every point moves up and down, not along (L09 p.5). <b>Friction</b> (a string in liquid) makes \(k\) complex and the wave decays as \(e^{-\kappa x}\) with \(\kappa\simeq\Gamma/2v\), its power as \(e^{-2\kappa x}\) (L09 p.5–7).</p>
+    <p><b>תנע.</b> בסדר ראשון, גל במיתר מוביל אנרגיה קדימה אבל לא תנע: כל נקודה זזה למעלה ולמטה, ולא לאורך המיתר (הרצאה 09 עמ' 5). <b>חיכוך</b> (מיתר בתוך נוזל) הופך את \(k\) למרוכב, והגל דועך כמו \(e^{-\kappa x}\) עם \(\kappa\simeq\Gamma/2v\), וההספק שלו כמו \(e^{-2\kappa x}\) (הרצאה 09 עמ' 5–7).</p>
   </div>
 </section>
 
 <!-- ================= 6. STANDING ================= -->
 <section id="standing">
   <div class="col">
-    <div class="eyebrow">6 · L10 p.1–5 · <span class="he" lang="he">גלים עומדים</span></div>
-    <h2>Standing waves are impedance at the extremes</h2>
-    <p class="q">What happens when the wave keeps coming and the end reflects all of it?</p>
-    <p>L10 starts with a sentence that ties everything together: "the wall behaves like an impedance on the left that is infinite: full reflection." A wall is \(\Zc=\infty\), so \(\Rc=-1\); a free end is \(\Zc=0\), so \(\Rc=+1\). Send in a steady wave instead of one pulse, and the incoming wave and its echo overlap everywhere. Their sum is a <b>standing wave</b>: a shape that grows and shrinks in place, with points that never move (<b>nodes</b>, <span class="he" lang="he">צמתים</span>).</p>
-    <p>Here the picture follows L10: the wall is on the <em>left</em> at \(x=0\), the string on \(x&gt;0\), and the wave comes in from the right, \(\psiI=A\cos(\omega t+kx+\phi)\). Slide the impedance of the end and watch the dips:</p>
+    <div class="eyebrow">6 · הרצאה 10 עמ' 1–5 · <span class="he" lang="he">גלים עומדים</span></div>
+    <h2>גלים עומדים הם עכבה בערכי קיצון</h2>
+    <p class="q">מה קורה כשהגל ממשיך להגיע, והקצה מחזיר את כולו?</p>
+    <p>הרצאה 10 נפתחת במשפט שקושר הכול יחד: "הקיר מתנהג כמו עכבה משמאל שהיא אינסופית: החזרה מלאה." קיר הוא \(\Zc=\infty\), ולכן \(\Rc=-1\); קצה חופשי הוא \(\Zc=0\), ולכן \(\Rc=+1\). שלחו גל רציף במקום פולס אחד, והגל הנכנס וההד שלו חופפים בכל מקום. הסכום שלהם הוא <b>גל עומד</b>: צורה שגדלה וקטנה במקומה, עם נקודות שאף פעם לא זזות (<b><span class="he" lang="he">צמתים</span></b>).</p>
+    <p>כאן התמונה הולכת לפי הרצאה 10: הקיר <em>משמאל</em> ב-\(x=0\), המיתר ב-\(x&gt;0\), והגל מגיע מימין, \(\psiI=A\cos(\omega t+kx+\phi)\). הזיזו את העכבה של הקצה, וצפו איפה התנודה נחלשת:</p>
   </div>
   <div class="fig" id="sim-standing">
-    <canvas aria-label="A steady wave from the right reflects off an end of adjustable impedance; the sum shows a standing or partly standing wave"></canvas>
+    <canvas aria-label="גל רציף מימין מוחזר מקצה בעל עכבה מתכווננת; הסכום מראה גל עומד או גל עומד חלקית"></canvas>
     <div class="controls">
-      <div class="btns" role="group" aria-label="The end"><button data-wend="wall">Wall (Z = ∞)</button><button data-wend="free">Free end (Z = 0)</button></div>
-      <div class="slider"><label for="w-zr">or a string with Z_end / Z_string</label><input id="w-zr" type="range" min="-2" max="2" step="0.01" value="2"><output id="w-zr-out"></output></div>
+      <div class="btns" role="group" aria-label="הקצה"><button data-wend="wall">קיר (<bdi>Z = ∞</bdi>)</button><button data-wend="free">קצה חופשי (<bdi>Z = 0</bdi>)</button><button data-wend="spring">קפיץ (תרגול 6)</button></div>
+      <div class="slider"><label for="w-kap">קשיחות הקפיץ <bdi>κ / kT</bdi></label><input id="w-kap" type="range" min="-1.3" max="1.3" step="0.01" value="0"><output id="w-kap-out"></output></div>
+      <div class="slider"><label for="w-zr">או מיתר בקצה, <bdi>Z<sub>קצה</sub> / Z<sub>מיתר</sub></bdi></label><input id="w-zr" type="range" min="-2" max="2" step="0.01" value="2"><output id="w-zr-out"></output></div>
     </div>
     <div class="controls">
-      <label class="chk"><input type="checkbox" id="w-parts" checked> show incident and reflected (dashed)</label>
-      <div class="btns"><button id="w-play">Pause</button></div>
+      <label class="chk"><input type="checkbox" id="w-parts" checked> הצג את הגל הפוגע ואת המוחזר (מקווקו)</label>
+      <div class="btns"><button id="w-play">השהה</button></div>
     </div>
     <div class="readout">
-      <div><span class="lab">R at the end</span><span class="val k-r" id="w-R"></span></div>
-      <div><span class="lab">largest swing</span><span class="val" id="w-max"></span></div>
-      <div><span class="lab">smallest swing</span><span class="val" id="w-min"></span></div>
+      <div><span class="lab">R בקצה</span><span class="val k-r" id="w-R"></span></div>
+      <div><span class="lab">התנודה הגדולה ביותר</span><span class="val" id="w-max"></span></div>
+      <div><span class="lab">התנודה הקטנה ביותר</span><span class="val" id="w-min"></span></div>
     </div>
     <p class="say" id="w-say" aria-live="polite"></p>
-    <p class="cap">The grey band is the envelope: how far each point ever swings. With \(|\Rc|=1\) the band pinches to zero at the nodes (red dots).</p>
+    <p class="cap">הרצועה האפורה היא המעטפת: עד כמה רחוק כל נקודה מגיעה אי פעם. כש-\(|\Rc|=1\) הרצועה מתכווצת לאפס בצמתים (הנקודות האדומות).</p>
   </div>
   <div class="deriv col">
-    <h4>Derivation: the standing wave at a wall (L10 p.1)</h4>
+    <h4>פיתוח: הגל העומד ליד קיר (הרצאה 10 עמ' 1)</h4>
     <ol>
-      <li><div class="why">The wall reflects with \(\Rc=-1\), and the echo is \(\Rc\,\psiI(-x,t)\) (section 2).</div>
+      <li><div class="why">הקיר מחזיר עם \(\Rc=-1\), וההד הוא \(\Rc\,\psiI(-x,t)\) (סעיף 2).</div>
         \[\psiR=-A\cos(\omega t-kx+\phi)\]</li>
-      <li><div class="why">Add them, using \(\cos a-\cos b=-2\sin\tfrac{a+b}2\sin\tfrac{a-b}2\).</div>
+      <li><div class="why">מחברים אותם, בעזרת \(\cos a-\cos b=-2\sin\tfrac{a+b}2\sin\tfrac{a-b}2\).</div>
         \[\psi=A\cos(\omega t+kx+\phi)-A\cos(\omega t-kx+\phi)=-2A\sin(\omega t+\phi)\,\sin kx\]</li>
-      <li><div class="why">Time and space have separated: \(\sin kx\) fixes the shape, \(\sin(\omega t+\phi)\) only scales it. Points with \(\sin kx=0\) never move.</div>
-        \[\boxed{\ \text{nodes at } kx=n\pi,\ \text{spaced } \lambda/2\ }\]</li>
+      <li><div class="why">הזמן והמקום נפרדו: \(\sin kx\) קובע את הצורה, ו-\(\sin(\omega t+\phi)\) רק משנה את הגודל שלה. נקודות שבהן \(\sin kx=0\) אף פעם לא זזות: אלה הצמתים, במרחק חצי אורך גל זה מזה.</div>
+        <div class=\"why\">צמתים ב־\(kx=n\pi\), במרווחים של \(\lambda/2\):</div>\[\boxed{\ kx=n\pi,\quad \Delta x=\lambda/2\ }\]</li>
     </ol>
-    <div class="check">Check: \(\psi(0,t)=0\) for all \(t\), as a wall demands ✓. For a free end (\(\Rc=+1\)) the same steps give \(2A\cos(\omega t+\phi)\cos kx\): an antinode at the end, zero slope there (L10 p.2–3).</div>
+    <div class="check">בדיקה: \(\psi(0,t)=0\) לכל \(t\), כמו שקיר דורש ✓. לקצה חופשי (\(\Rc=+1\)) אותם צעדים נותנים \(2A\cos(\omega t+\phi)\cos kx\): בטן בקצה, ושיפוע אפס שם (הרצאה 10 עמ' 2–3).</div>
   </div>
   <div class="col">
-    <h3>Two walls: only some wavelengths fit (L10 p.3–4)</h3>
-    <p>A string of length \(L\) tied at both ends needs a node at \(x=L\) as well: \(\sin kL=0\). So \(k\) can no longer be anything:</p>
+    <h3>קפיץ בקצה: החזרה מלאה עם מופע (תרגול 6)</h3>
+    <p class="q">מה קורה אם המיתר נגמר בטבעת חסרת מסה שמחוברת לקפיץ עם קבוע \(\kappa\)?</p>
+    <p>לטבעת אין מסה, ולכן הקפיץ והמיתר מאזנים זה את זה: \(\kappa y=-\Ten\,\dx\psi\) בקצה, כאשר \(y\) הוא גובה הטבעת. מציבים גל פוגע ועוד הד \(r\) ופותרים. בתרגול 6 מקבלים:</p>
+    \[r=\frac{k\Ten+i\kappa}{k\Ten-i\kappa},\qquad |r|=1,\qquad r=e^{i\varphi_k},\quad \varphi_k=2\arctan\frac{\kappa}{k\Ten}\]
+    <p><b>מה זה אומר.</b> \(|r|=1\): הקפיץ אוגר אנרגיה אבל לא בולע אותה, ולכן הכול חוזר, כמו בקיר. אבל ההד חוזר <em>מוזז</em> במופע \(\varphi_k\). בשפת העכבה: כוח הקפיץ הוא \(-\kappa y\), פרופורציוני להעתק ולא למהירות, ולכן ה"עכבה" שלו \(F/\vy\) מדומה טהורה. עכבה מדומה לא יכולה לבלוע הספק, ולכן \(|r|=1\), והיא מזיזה את המופע. גבולות: \(\kappa\to\infty\) נותן \(\varphi=\pi\), כלומר \(r=-1\), קיר; \(\kappa\to0\) נותן \(\varphi=0\), כלומר \(r=+1\), קצה חופשי. באמצע, לגל העומד יש צמתים במרחק \(\lambda/2\) זה מזה, אבל אף אחד מהם לא בקצה. לחצו "קפיץ" באיור למעלה והזיזו את הקשיחות.</p>
+    <p><b>שימו לב:</b> \(\varphi_k\) תלוי ב-\(k\). חבורת גלים שפוגעת בקפיץ לא מוחזרת באופן אחיד: כל תדירות חוזרת עם הזזת מופע משלה, ולכן צורת ההד משתנה (סעיף 7).</p>
+    <h3>שני קירות: רק אורכי גל מסוימים נכנסים (הרצאה 10 עמ' 3–4)</h3>
+    <p>מיתר באורך \(L\) שקשור בשני הקצוות צריך צומת גם ב-\(x=L\): \(\sin kL=0\). לכן \(k\) כבר לא יכול לקבל כל ערך:</p>
     \[k_n=\frac{n\pi}{L},\qquad \lambda_n=\frac{2L}{n},\qquad \nu_n=\frac{n\,v}{2L},\qquad \psi(x,t)=\sum_n B_n\sin(\omega_nt+\phi_n)\sin k_nx\]
-    <p>These are the <b>normal modes</b>. Every frequency is a whole multiple of the lowest one, \(\nu_1=v/2L\). Any motion of the string is a sum of modes, with \(B_n,\phi_n\) fixed by the starting shape and velocity.</p>
+    <p>אלה <b>אופני התנודה הנורמליים</b>. כל תדירות היא כפולה שלמה של הנמוכה ביותר, \(\nu_1=v/2L\). כל תנועה של המיתר היא סכום של אופנים, כש-\(B_n,\phi_n\) נקבעים לפי הצורה והמהירות ההתחלתיות.</p>
   </div>
   <div class="fig" id="sim-modes">
-    <canvas aria-label="Normal mode n of a string fixed at both ends, with nodes marked"></canvas>
+    <canvas aria-label="אופן תנודה נורמלי n של מיתר שקשור בשני קצותיו, עם הצמתים מסומנים"></canvas>
     <div class="controls">
-      <div class="btns" role="group" aria-label="Mode number"><button data-mode="1">n = 1</button><button data-mode="2">n = 2</button><button data-mode="3">n = 3</button><button data-mode="4">n = 4</button><button data-mode="5">n = 5</button><button data-mode="6">n = 6</button></div>
-      <div class="btns"><button id="m-play">Pause</button></div>
+      <div class="btns" role="group" aria-label="מספר האופן"><button data-mode="1">n = 1</button><button data-mode="2">n = 2</button><button data-mode="3">n = 3</button><button data-mode="4">n = 4</button><button data-mode="5">n = 5</button><button data-mode="6">n = 6</button></div>
+      <div class="btns"><button id="m-play">השהה</button></div>
     </div>
     <div class="readout">
-      <div><span class="lab">wavelength λₙ</span><span class="val" id="m-lam"></span></div>
-      <div><span class="lab">frequency νₙ</span><span class="val" id="m-nu"></span></div>
-      <div><span class="lab">nodes</span><span class="val" id="m-nodes"></span></div>
+      <div><span class="lab">אורך גל λₙ</span><span class="val" id="m-lam"></span></div>
+      <div><span class="lab">תדירות νₙ</span><span class="val" id="m-nu"></span></div>
+      <div><span class="lab">צמתים</span><span class="val" id="m-nodes"></span></div>
     </div>
   </div>
   <div class="col">
-    <p><b>No net power in a standing wave</b> (L10 p.5). With \(\psi=A\sin\omega t\sin kx\), the power \(P=-\Ten\dx\psi\dt\psi\) contains \(\sin\omega t\cos\omega t=\tfrac12\sin2\omega t\), which averages to zero over a period. At any instant energy moves, but it only sloshes back and forth between neighbouring nodes. Switch the energy figure in section 5 to "standing" to see it.</p>
+    <p><b>אין הספק נטו בגל עומד</b> (הרצאה 10 עמ' 5). עם \(\psi=A\sin\omega t\sin kx\), ההספק \(P=-\Ten\dx\psi\dt\psi\) מכיל את \(\sin\omega t\cos\omega t=\tfrac12\sin2\omega t\), שהממוצע שלו על פני מחזור הוא אפס. בכל רגע האנרגיה זזה, אבל היא רק מתנדנדת הלוך ושוב בין צמתים שכנים. העבירו את איור האנרגיה בסעיף 5 ל"גל עומד" כדי לראות את זה.</p>
   </div>
 </section>
 
 <!-- ================= 7. PACKETS ================= -->
 <section id="packets">
   <div class="col">
-    <div class="eyebrow">7 · L12 p.2–4, p.8–9 · <span class="he" lang="he">חבורות גלים</span></div>
-    <h2>Wave packets at a junction</h2>
-    <p class="q">A real pulse is made of many frequencies. Why does it keep its shape when it reflects?</p>
-    <p>A <b>wave packet</b> is a sum of many single-frequency waves. Add two and you get beats: a fast carrier inside a slow envelope. Add many, with weights that fall off smoothly around a central wave number \(k_0\), and all the bumps but one cancel: a single packet, a carrier \(\cos k_0x\) inside an envelope \(h(x)\) (L12 writes \(\psi(x,0)=h(x)e^{ik_0x}\)). Build one:</p>
+    <div class="eyebrow">7 · הרצאה 12 עמ' 2–4, עמ' 8–9 · <span class="he" lang="he">חבורות גלים</span></div>
+    <h2>חבורות גלים בנקודת חיבור</h2>
+    <p class="q">פולס אמיתי בנוי מהרבה תדירויות. למה הוא שומר על הצורה שלו כשהוא מוחזר?</p>
+    <p><b>חבורת גלים</b> היא סכום של הרבה גלים, כל אחד בתדירות אחת. חברו שניים ותקבלו פעימות: גל נושא מהיר בתוך מעטפת איטית. חברו הרבה, עם משקלים שיורדים בצורה חלקה סביב מספר גל מרכזי \(k_0\), וכל הבליטות מלבד אחת מתבטלות: נשארת חבורה אחת, גל נושא \(\cos k_0x\) בתוך מעטפת \(h(x)\) (בהרצאה 12 כותבים \(\psi(x,0)=h(x)e^{ik_0x}\)). בנו אחת:</p>
   </div>
   <div class="fig" id="sim-packet">
-    <canvas aria-label="Adding single-frequency waves: one wave, beats from two, and a localized packet from many"></canvas>
+    <canvas aria-label="חיבור גלים בתדירות אחת: גל אחד, פעימות משניים, וחבורה ממוקמת מהרבה"></canvas>
     <div class="controls">
-      <div class="slider"><label for="p-n">number of waves added</label><input id="p-n" type="range" min="1" max="41" step="1" value="2"><output id="p-n-out"></output></div>
-      <div class="btns"><button data-send-packet>Send a packet into the junction</button></div>
+      <div class="slider"><label for="p-n">מספר הגלים שמחברים</label><input id="p-n" type="range" min="1" max="41" step="1" value="2"><output id="p-n-out"></output></div>
+      <div class="btns"><button data-send-packet>שלח חבורה אל נקודת החיבור</button></div>
     </div>
     <p class="say" id="p-say" aria-live="polite"></p>
   </div>
   <div class="col">
-    <p>Now the link to impedance. At a junction, each single-frequency part of the packet reflects with its own \(\Rc\). On a string \(\Zc=\sqrt{\Ten\rho}\) contains no frequency at all, so <b>every part gets the same \(\Rc\) and the same \(\Tc\)</b>. The echo is therefore the whole packet, mirrored and scaled, and the transmitted packet is the whole packet, scaled and stretched by \(v_2/v_1\). That is exactly why L07 could write \(\psiR=\Rc\,\psiI(-x,t)\) for <em>any</em> shape. On a string every part also travels at the same speed \(v\) (\(\omega=vk\)), so the packet does not spread out; packets that do spread need dispersion (L11–L12).</p>
-    <p>Press "Send a packet into the junction", or choose "Wave packet" in the top figure: the carrier wiggles inside the echo flip together when \(\Rc&lt;0\), and the transmitted packet keeps the same number of wiggles while it gets wider or narrower.</p>
-    <p><span class="mine">mine, a look ahead</span> When the impedance does depend on frequency (a cable with resistance, \(\Zc=\sqrt{(R+i\omega L)/(i\omega C)}\), recitation 5), different parts reflect differently and the echo is distorted.</p>
+    <p>עכשיו הקשר לעכבה. בנקודת חיבור, כל רכיב של החבורה (בתדירות אחת) מוחזר עם \(\Rc\) משלו. במיתר \(\Zc=\sqrt{\Ten\rho}\) לא תלויה בתדירות בכלל, ולכן <b>כל הרכיבים מקבלים אותו \(\Rc\) ואותו \(\Tc\)</b>. לכן ההד הוא כל החבורה, משוקפת ומוכפלת בקבוע, והחבורה המועברת היא כל החבורה, מוכפלת בקבוע ומורחבת פי \(v_2/v_1\). זו בדיוק הסיבה שבהרצאה 07 אפשר היה לכתוב \(\psiR=\Rc\,\psiI(-x,t)\) עבור <em>כל</em> צורה. במיתר כל רכיב גם נע באותה מהירות \(v\) (\(\omega=vk\)), ולכן החבורה לא מתפזרת; כדי שחבורות יתפזרו צריך נפיצה (דיספרסיה, הרצאות 11–12).</p>
+    <p>לחצו "שלח חבורה אל נקודת החיבור", או בחרו "חבורת גלים" באיור העליון: התנודות של הגל הנושא בתוך ההד מתהפכות כולן יחד כש-\(\Rc&lt;0\), והחבורה המועברת שומרת על אותו מספר תנודות בזמן שהיא נעשית רחבה או צרה יותר.</p>
+    <p><b>כשהקצה כן תלוי בתדירות</b>, הצורה לא נשמרת. הקפיץ של תרגול 6 מחזיר כל רכיב עם מופע משלו, \(\varphi_k=2\arctan(\kappa/k\Ten)\), ולכן ההד של חבורה מעוות (סעיף 6). אותו דבר קורה בכבל עם התנגדות, שה-\(\Zc=\sqrt{(R+i\omega L)/(i\omega C)}\) שלו תלוי ב-\(\omega\) (תרגול 5).</p>
   </div>
 </section>
 
 <!-- ================= 8. MEDIA ================= -->
 <section id="media">
   <div class="col">
-    <div class="eyebrow">8 · L08 p.4–6, recitation 5, Crawford 4.4</div>
-    <h2>One idea, many media</h2>
-    <p class="q">Is impedance only about strings?</p>
-    <p>No. Every wave has a "push" quantity and a "motion" quantity, and \(\Zc\) is their ratio. Once you know a medium's \(\Zc\), every result on this page applies unchanged.</p>
+    <div class="eyebrow">8 · הרצאה 08 עמ' 4–6, תרגול 5, Crawford 4.4</div>
+    <h2>רעיון אחד, הרבה תווכים</h2>
+    <p class="q">האם עכבה נוגעת רק למיתרים?</p>
+    <p>לא. לכל גל יש גודל של "דחיפה" וגודל של "תנועה", ו-\(\Zc\) הוא היחס ביניהם. ברגע שיודעים את \(\Zc\) של תווך, כל תוצאה בדף הזה חלה עליו בלי שינוי.</p>
   </div>
   <div class="tablewrap"><table>
-    <thead><tr><th>Medium</th><th>push (force-like)</th><th>motion (velocity-like)</th><th>impedance</th><th>matched when</th></tr></thead>
+    <thead><tr><th>תווך</th><th>דחיפה (כמו כוח)</th><th>תנועה (כמו מהירות)</th><th>עכבה</th><th>מתואם כאשר</th></tr></thead>
     <tbody>
-      <tr><td>string (L08)</td><td>vertical force \(F_y\)</td><td>\(\vy\)</td><td>\(\Zc=\sqrt{\Ten\rho}\)</td><td>\(\Zi1=\Zi2\)</td></tr>
-      <tr><td>circuit (L08 p.4–5)</td><td>voltage \(V\)</td><td>current \(I\)</td><td>resistance \(R=V/I\)</td><td>\(R_L=R_S\)</td></tr>
-      <tr><td>cable (recitation 5)</td><td>voltage \(V\)</td><td>current \(I\)</td><td>\(Z_0=\sqrt{L/C}\) (per-length \(L\), \(C\))</td><td>equal \(Z_0\)</td></tr>
-      <tr><td>sound (Crawford 4.4)</td><td>pressure</td><td>air velocity</td><td>\(\sqrt{\gamma p_0\rho_0}\) per area</td><td>equal \(\Zc\), or a horn between</td></tr>
-      <tr><td>light (L15, ahead of class)</td><td>electric field</td><td>magnetic field</td><td>\(\sqrt{\mu/\varepsilon}\propto1/n\)</td><td>equal \(n\)</td></tr>
+      <tr><td>מיתר (הרצאה 08)</td><td>כוח אנכי \(F_y\)</td><td>\(\vy\)</td><td>\(\Zc=\sqrt{\Ten\rho}\)</td><td>\(\Zi1=\Zi2\)</td></tr>
+      <tr><td>מעגל חשמלי (הרצאה 08 עמ' 4–5)</td><td>מתח \(V\)</td><td>זרם \(I\)</td><td>התנגדות \(R=V/I\)</td><td>\(R_L=R_S\)</td></tr>
+      <tr><td>כבל (תרגול 5)</td><td>מתח \(V\)</td><td>זרם \(I\)</td><td>\(Z_0=\sqrt{L/C}\) (\(L\), \(C\) ליחידת אורך)</td><td>\(Z_0\) שווה</td></tr>
+      <tr><td>קול (Crawford 4.4)</td><td>לחץ</td><td>מהירות האוויר</td><td>\(\sqrt{\gamma p_0\rho_0}\) ליחידת שטח</td><td>\(\Zc\) שווה, או מגהפון ביניהם</td></tr>
+      <tr><td>אור (הרצאה 15, לפני שנלמד בכיתה)</td><td>שדה חשמלי</td><td>שדה מגנטי</td><td>\(\sqrt{\mu/\varepsilon}\propto1/n\)</td><td>\(n\) שווה</td></tr>
     </tbody>
   </table></div>
   <div class="col">
-    <p>The pattern in the impedance column: always \(\sqrt{\text{stiffness}\times\text{inertia}}\). For the cable, \(L\) plays the inertia (like \(\rho\)) and \(1/C\) the stiffness (like \(\Ten\)): \(\sqrt{L\cdot(1/C)}=\sqrt{L/C}\). The speed is the other combination, \(\sqrt{\text{stiffness}/\text{inertia}}\): \(v=\sqrt{\Ten/\rho}\) and \(c=1/\sqrt{LC}\).</p>
-    <p><b>A cable at a short circuit</b> (\(Z_2=0\)) is the free end of the string: the current (velocity-like) doubles, while the voltage (force-like) reflects with \(-\Rc=-1\) and is zero at the short. No voltage, no power delivered. This is the circuit version of the trap in section 4.</p>
+    <p>הדפוס בעמודת העכבה: תמיד שורש של (קשיחות × אינרציה). בכבל, \(L\) משחק את האינרציה (כמו \(\rho\)) ו-\(1/C\) את הקשיחות (כמו \(\Ten\)): \(\sqrt{L\cdot(1/C)}=\sqrt{L/C}\). המהירות היא הצירוף האחר, שורש של (קשיחות ÷ אינרציה): \(v=\sqrt{\Ten/\rho}\) ו-\(c=1/\sqrt{LC}\).</p>
+    <p><b>כבל בקצר</b> (\(Z_2=0\)) הוא הקצה החופשי של המיתר: הזרם (שדומה למהירות) גדל פי 2, והמתח (שדומה לכוח) מוחזר עם \(-\Rc=-1\) ושווה לאפס בקצר. אין מתח, ולכן לא מגיע הספק. זו הגרסה החשמלית של המלכודת מסעיף 4.</p>
   </div>
 </section>
 
 <!-- ================= CHECK ================= -->
 <section id="check">
   <div class="col">
-    <h2>Check yourself</h2>
-    <p class="q">No numbers, just the ideas. Answer in your head, then open.</p>
+    <h2>בדקו את עצמכם</h2>
+    <p class="q">בלי מספרים, רק הרעיונות. ענו בראש, ואז פתחו.</p>
     <div class="qa">
-      <details><summary>A pulse goes from a light string to a heavy one with the same tension. Is the echo upright or upside down?</summary><div class="ans">Upside down. Heavy means larger \(\Zc=\sqrt{\Ten\rho}\), so \(\Zi2&gt;\Zi1\) and \(\Rc=\frac{\Zi1-\Zi2}{\Zi1+\Zi2}&lt;0\).</div></details>
-      <details><summary>\(\Tc\) can be bigger than 1. Doesn't that break energy conservation?</summary><div class="ans">No. \(\Tc\) compares heights, not energy. The power fraction is \(\TE=\frac{\Zi2}{\Zi1}\Tc^2\le1\). A tall pulse on a low-impedance string carries little power.</div></details>
-      <details><summary>Can two strings with different wave speeds be joined without any echo?</summary><div class="ans">Yes, if their impedances are equal. Example: three times the tension and a third of the density gives the same \(\Zc\) but three times the speed. The junction feels only \(\Zc\).</div></details>
-      <details><summary>Why doesn't a lower \(\Zi2\) pass more power, "since it resists less"?</summary><div class="ans">Power is force times velocity, and the force on the knot is \(\Zi2\vy\). A low-impedance string barely pushes, so little power goes in; at \(\Zi2=0\) none. Maximum power through is at \(\Zi2=\Zi1\).</div></details>
-      <details><summary>What is a wall, in impedance language? And a free end?</summary><div class="ans">Wall: \(\Zc=\infty\), \(\Rc=-1\), a node (no motion) at the wall. Free end: \(\Zc=0\), \(\Rc=+1\), an antinode, with zero slope at the end.</div></details>
-      <details><summary>Doubling the tension of a string (same density) changes its impedance and its speed by what?</summary><div class="ans">Both by \(\sqrt2\): \(\Zc=\sqrt{\Ten\rho}\) and \(v=\sqrt{\Ten/\rho}\).</div></details>
-      <details><summary>"The rest of the string is a damper with \(F_y=-\Zc\vy\)." When is this false?</summary><div class="ans">When something comes back along the string: a second junction or a fixed end beyond. The derivation used a wave moving only away. With waves both ways (a standing wave) the force is no longer proportional to the velocity.</div></details>
-      <details><summary>If the string acts like a damper, why doesn't it heat up?</summary><div class="ans">It doesn't dissipate the energy, it carries it away as a wave. A damper turns the work into heat; the string passes it on to whatever is further along.</div></details>
-      <details><summary>What is the time-averaged power in a standing wave, and why?</summary><div class="ans">Zero. It is two equal waves going opposite ways, so their powers cancel; directly, \(P\propto\sin\omega t\cos\omega t\), which averages to zero. Energy sloshes between nodes but never crosses one.</div></details>
-      <details><summary>A wave packet hits a string junction. Does its shape change?</summary><div class="ans">Only by scaling (and mirroring for the echo). The transmitted packet is stretched in space by \(v_2/v_1\) but lasts the same time. On a string \(\Zc\) has no frequency in it, so every frequency in the packet gets the same \(\Rc\) and \(\Tc\).</div></details>
-      <details><summary>What does ultrasound gel do?</summary><div class="ans">It removes the air between the probe and the skin. Air has a very different impedance from both, so it would reflect almost everything. With the gel the step is small and most of the sound goes in (L08 p.6).</div></details>
-      <details><summary>A wave hits a junction. Which stays the same on both sides: frequency, wavelength or speed?</summary><div class="ans">The frequency. The knot moves at one frequency, and it drives string 2 at that frequency. The speed changes to \(v_2\), so the wavelength changes to \(v_2/\nu\).</div></details>
+      <details><summary>פולס עובר ממיתר קל למיתר כבד עם אותה מתיחות. ההד ישר או הפוך?</summary><div class="ans">הפוך. כבד פירושו \(\Zc=\sqrt{\Ten\rho}\) גדולה יותר, כלומר \(\Zi2&gt;\Zi1\) ו-\(\Rc=\frac{\Zi1-\Zi2}{\Zi1+\Zi2}&lt;0\).</div></details>
+      <details><summary>\(\Tc\) יכול להיות גדול מ-1. זה לא סותר שימור אנרגיה?</summary><div class="ans">לא. \(\Tc\) משווה גבהים, לא אנרגיה. חלק ההספק הוא \(\TE=\frac{\Zi2}{\Zi1}\Tc^2\le1\). פולס גבוה על מיתר בעל עכבה נמוכה מוביל מעט הספק.</div></details>
+      <details><summary>אפשר לחבר שני מיתרים עם מהירויות גל שונות בלי שום הד?</summary><div class="ans">כן, אם העכבות שלהם שוות. דוגמה: פי שלושה מתיחות ושליש מהצפיפות נותנים אותה \(\Zc\), אבל מהירות גדולה פי שלושה. נקודת החיבור מרגישה רק את \(\Zc\).</div></details>
+      <details><summary>למה \(\Zi2\) נמוכה יותר לא מעבירה יותר הספק, "כי היא מתנגדת פחות"?</summary><div class="ans">הספק הוא כוח כפול מהירות, והכוח על הקשר הוא \(\Zi2\vy\). מיתר בעל עכבה נמוכה כמעט לא דוחף, ולכן נכנס מעט הספק; ב-\(\Zi2=0\) לא נכנס בכלל. ההספק המרבי עובר כש-\(\Zi2=\Zi1\).</div></details>
+      <details><summary>מהו קיר בשפת העכבה? ומהו קצה חופשי?</summary><div class="ans">קיר: \(\Zc=\infty\), \(\Rc=-1\), צומת (אין תנועה) בקיר. קצה חופשי: \(\Zc=0\), \(\Rc=+1\), בטן, עם שיפוע אפס בקצה.</div></details>
+      <details><summary>מגדילים פי 2 את המתיחות של מיתר (באותה צפיפות). פי כמה משתנות העכבה והמהירות שלו?</summary><div class="ans">שתיהן פי \(\sqrt2\): \(\Zc=\sqrt{\Ten\rho}\) ו-\(v=\sqrt{\Ten/\rho}\).</div></details>
+      <details><summary>"שאר המיתר הוא בולם עם \(F_y=-\Zc\vy\)." מתי זה לא נכון?</summary><div class="ans">כשמשהו חוזר לאורך המיתר: נקודת חיבור נוספת או קצה קבוע בהמשך. הפיתוח השתמש בגל שרק מתרחק. עם גלים בשני הכיוונים (גל עומד) הכוח כבר לא פרופורציוני למהירות.</div></details>
+      <details><summary>אם המיתר מתנהג כמו בולם, למה הוא לא מתחמם?</summary><div class="ans">הוא לא מאבד את האנרגיה, הוא מוביל אותה הלאה כגל. בולם הופך את העבודה לחום; המיתר מעביר אותה למה שנמצא בהמשך.</div></details>
+      <details><summary>מהו ההספק הממוצע בזמן בגל עומד, ולמה?</summary><div class="ans">אפס. גל עומד הוא שני גלים שווים שנעים בכיוונים מנוגדים, ולכן ההספקים שלהם מתבטלים; ובאופן ישיר, \(P\propto\sin\omega t\cos\omega t\), שהממוצע שלו אפס. האנרגיה מתנדנדת בין צמתים, אבל אף פעם לא חוצה צומת.</div></details>
+      <details><summary>חבורת גלים פוגעת בנקודת חיבור של מיתרים. האם הצורה שלה משתנה?</summary><div class="ans">רק בהכפלה בקבוע (ובשיקוף, בהד). החבורה המועברת מורחבת במרחב פי \(v_2/v_1\), אבל נמשכת אותו זמן. במיתר \(\Zc\) לא תלויה בתדירות, ולכן כל תדירות בחבורה מקבלת אותו \(\Rc\) ואותו \(\Tc\).</div></details>
+      <details><summary>מיתר נגמר בטבעת שמחוברת לקפיץ. כמה הספק חוזר, ומה שונה מקיר?</summary><div class="ans">כולו, \(|r|=1\): קפיץ אוגר אנרגיה אבל לא בולע אותה. ההבדל הוא במופע: \(r=e^{i\varphi}\), עם \(\varphi\) בין 0 (קפיץ רך, כמו קצה חופשי) ל-\(\pi\) (קפיץ קשיח, כמו קיר). הצמתים זזים מהקצה, ומכיוון ש-\(\varphi\) תלוי ב-\(k\), ההד של חבורת גלים משנה צורה.</div></details>
+      <details><summary>שני מיתרים לא מתואמים. איזה מיתר אמצעי יעביר גל רציף בלי החזרה?</summary><div class="ans">מיתר עם \(\Zi{m}=\sqrt{\Zi1\Zi2}\), שאורכו רבע מאורך הגל שלו. אז שני ההדים שווים בגודלם והפוכים במופע, ומבטלים זה את זה. זה עובד רק בתדירות הזו (ובכפולות האי-זוגיות שלה).</div></details>
+      <details><summary>מה עושה ג'ל של אולטרסאונד?</summary><div class="ans">הוא מסלק את האוויר שבין המתמר לעור. לאוויר יש עכבה שונה מאוד משל שניהם, ולכן הוא היה מחזיר כמעט הכול. עם הג'ל המדרגה קטנה, ורוב הקול נכנס (הרצאה 08 עמ' 6).</div></details>
+      <details><summary>גל פוגע בנקודת חיבור. מה נשאר זהה בשני הצדדים: התדירות, אורך הגל או המהירות?</summary><div class="ans">התדירות. הקשר זז בתדירות אחת, והוא מניע את מיתר 2 באותה תדירות. המהירות משתנה ל-\(v_2\), ולכן אורך הגל משתנה ל-\(v_2/\nu\).</div></details>
     </div>
   </div>
 </section>
@@ -611,24 +660,24 @@ window.MathJax = {
 <!-- ================= RECAP ================= -->
 <section id="recap">
   <div class="col">
-    <h2>One-screen recap</h2>
-    <p class="q">Each formula with the sentence that goes with it.</p>
+    <h2>סיכום במסך אחד</h2>
+    <p class="q">כל נוסחה, עם המשפט שהולך איתה.</p>
   </div>
   <div class="recap">
-    <div>\[\Zc=\frac{\Ten}{v}=\sqrt{\Ten\rho}=\rho v\]<p class="plain">How hard a string is to shake. Grows with tension and with density.</p></div>
-    <div>\[F_y=-\Zc\,\vy\]<p class="plain">The string beyond a point acts like a damper of constant \(\Zc\), while nothing comes back.</p></div>
-    <div>\[\Rc=\frac{\Zi1-\Zi2}{\Zi1+\Zi2},\quad \Tc=\frac{2\Zi1}{\Zi1+\Zi2}\]<p class="plain">Heights of the echo and of the pulse that goes on. \(1+\Rc=\Tc\).</p></div>
-    <div>\[\psiR=\Rc\,\psiI(-x,t),\quad \psiT=\Tc\,\psiI\!\left(\tfrac{v_1}{v_2}x,t\right)\]<p class="plain">Any shape: the echo is the mirror image; the pulse that goes on is wider by \(v_2/v_1\).</p></div>
-    <div>\[P=\Zc(\dt\psi)^2=v\,\mathcal E\]<p class="plain">Power of a right-moving wave. Kinetic = potential energy.</p></div>
-    <div>\[\RE=\Rc^2,\quad \TE=\frac{\Zi2}{\Zi1}\Tc^2,\quad \RE+\TE=1\]<p class="plain">Shares of the power. \(\Tc^2\) alone is not the power share.</p></div>
-    <div>\[\Zi1=\Zi2\ \Rightarrow\ \Rc=0\]<p class="plain">Matching: the junction disappears. Lower \(\Zi2\) is not better.</p></div>
-    <div>\[\text{wall } \Zc=\infty:\ \Rc=-1;\quad \text{free } \Zc=0:\ \Rc=+1\]<p class="plain">Total reflection. With a steady wave: a standing wave, nodes every \(\lambda/2\), no net power.</p></div>
-    <div>\[k_n=\frac{n\pi}{L},\quad \nu_n=\frac{nv}{2L}\]<p class="plain">Two fixed ends allow only whole numbers of half wavelengths.</p></div>
+    <div>\[\Zc=\frac{\Ten}{v}=\sqrt{\Ten\rho}=\rho v\]<p class="plain">כמה קשה לנער מיתר. גדלה עם המתיחות ועם הצפיפות.</p></div>
+    <div>\[F_y=-\Zc\,\vy\]<p class="plain">המיתר שמעבר לנקודה מתנהג כמו בולם עם קבוע \(\Zc\), כל עוד שום דבר לא חוזר.</p></div>
+    <div>\[\Rc=\frac{\Zi1-\Zi2}{\Zi1+\Zi2},\quad \Tc=\frac{2\Zi1}{\Zi1+\Zi2}\]<p class="plain">הגבהים של ההד ושל הפולס שממשיך. \(1+\Rc=\Tc\).</p></div>
+    <div>\[\psiR=\Rc\,\psiI(-x,t),\quad \psiT=\Tc\,\psiI\!\left(\tfrac{v_1}{v_2}x,t\right)\]<p class="plain">לכל צורה: ההד הוא תמונת המראה; הפולס שממשיך רחב יותר פי \(v_2/v_1\).</p></div>
+    <div>\[P=\Zc(\dt\psi)^2=v\,\mathcal E\]<p class="plain">ההספק של גל שנע ימינה. אנרגיה קינטית = פוטנציאלית.</p></div>
+    <div>\[\RE=\Rc^2,\quad \TE=\frac{\Zi2}{\Zi1}\Tc^2,\quad \RE+\TE=1\]<p class="plain">חלקי ההספק. \(\Tc^2\) לבדו אינו חלק ההספק.</p></div>
+    <div>\[\Zi1=\Zi2\ \Rightarrow\ \Rc=0\]<p class="plain">תיאום: נקודת החיבור נעלמת. \(\Zi2\) נמוכה יותר אינה עדיפה.</p></div>
+    <div><p class=\"plain\" style=\"margin:0\">קיר: \(\Zc=\infty\Rightarrow\Rc=-1\) · קצה חופשי: \(\Zc=0\Rightarrow\Rc=+1\)</p><p class="plain">קיר וקצה חופשי: החזרה מלאה. עם גל רציף: גל עומד, צמתים כל \(\lambda/2\), ואין הספק נטו.</p></div>
+    <div>\[k_n=\frac{n\pi}{L},\quad \nu_n=\frac{nv}{2L}\]<p class="plain">שני קצוות קבועים מאפשרים רק מספר שלם של חצאי אורכי גל.</p></div>
   </div>
 </section>
 
 <footer class="col">
-  <p>Built from the lecturer's notes 07–10 and 12 (page numbers in the text), recitation 5, and Crawford, <i>Waves</i>, sections 4.4 and 5.2–5.3. Marks "mine" are additions that are not in the notes. Letters follow the lecture; the colours are this page's own.</p>
+  <p>נבנה מרשימות ההרצאה של המרצה, הרצאות 07–10 ו-12 (מספרי העמודים מופיעים בטקסט), מתרגולים 5 ו-6, ומ-Crawford, <i>Waves</i>, סעיפים 4.4 ו-5.2–5.3. הסימון "תוספת שלי" מציין תוספות שאינן ברשימות. האותיות הולכות לפי ההרצאה; הצבעים הם של הדף הזה.</p>
 </footer>
 </div>
 
