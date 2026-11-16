@@ -695,6 +695,216 @@
     addWidget(box, (dt) => { if (st.playing) st.t += dt; draw(); });
   }
 
+  /* ============ 7b. Why a wall gives a standing wave (recitation 6, Example 1) ============
+     String on x < 0, wall at x = 0. psi_i = sin k(x - vt) moves right; the echo is
+     R psi_i(-x,t) with R = -1, i.e. sin k(x + vt), moving left. Sum = 2 sin kx cos kvt.
+     Three lanes (incident + reflected = sum) so the addition is visible point by point.
+     "Build-up" sends a wave train whose front starts at x0 and shows the pattern appear
+     only where the echo has already come back. */
+  function initWallSum() {
+    const box = $('#sim-wallsum');
+    const S = setupCanvas($('canvas', box), (w) => Math.max(330, Math.min(430, w * 0.55)));
+    const lam = 0.4, k = TAU / lam, v = lam / 3; // one period takes 3 s
+    const x0 = -1;                                 // left edge of the drawn string (2.5 wavelengths)
+    const u0 = -lam;                               // build-up: the train's front starts one wavelength from the wall; sin(k*u0) = 0, so no jump
+    const st = { mode: 'steady', t: 0, playing: !reduceMotion, env: true };
+    if (!st.playing) st.t = 0.35;
+    // incident profile f(u), u = x - vt. Steady: an endless sine. Build-up: zero ahead of the front u = x0.
+    const f = (u) => (st.mode === 'build' && u > u0 ? 0 : Math.sin(k * u));
+    const inc = (x, t) => f(x - v * t);
+    const ref = (x, t) => -f(-x - v * t); // R * psi_i(-x, t), R = -1
+    const showPlay = playButton($('#ws-play'), () => st.playing, (p) => { st.playing = p; });
+    function setMode(m) {
+      st.mode = m; st.t = 0;
+      $$('[data-wsmode]', box).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.wsmode === m)));
+      if (m === 'build') { st.playing = true; showPlay(); }
+    }
+    $$('[data-wsmode]', box).forEach((b) => b.addEventListener('click', () => setMode(b.dataset.wsmode)));
+    $$('[data-wsfreeze]', box).forEach((b) => b.addEventListener('click', () => {
+      if (st.mode !== 'steady') setMode('steady');
+      st.t = (parseFloat(b.dataset.wsfreeze) * Math.PI) / (k * v); // kvt = the button's value
+      st.playing = false; showPlay();
+    }));
+    $('#ws-env').addEventListener('change', (e) => { st.env = e.target.checked; });
+    setMode('steady');
+    function readouts() {
+      const ph = (k * v * st.t) % TAU;
+      $('#ws-ph').textContent = (ph / Math.PI).toFixed(2) + ' π';
+      $('#ws-cos').textContent = fmt(2 * Math.cos(k * v * st.t));
+      const w0 = inc(0, st.t) + ref(0, st.t);
+      $('#ws-wall').textContent = fmt(Math.abs(w0) < 5e-13 ? 0 : w0, 3);
+      let say;
+      if (st.mode === 'build') {
+        const echo = -(v * st.t + u0); // echo front: the reflected train is nonzero for x > echo
+        if (v * st.t + u0 < 0) say = tr('The train has not reached the wall yet: there is no echo, and the string carries a plain travelling wave.', 'הרכבת עוד לא הגיעה לקיר: אין הד, והמיתר נושא גל מתקדם רגיל.');
+        else if (echo > x0) say = tr('The echo is on its way back. Right of the orange line the two waves overlap and the string stands still at the nodes. Left of it the string still carries the plain travelling wave.', 'ההד בדרך חזרה. מימין לקו הכתום שני הגלים חופפים, והמיתר עומד במקום בצמתים. משמאל לו המיתר עדיין נושא גל מתקדם רגיל.');
+        else say = tr('The echo has covered the whole string: everywhere is now the standing wave 2 sin kx cos kvt.', 'ההד כיסה את כל המיתר: עכשיו בכל מקום יש את הגל העומד ‎2 sin kx cos kvt‎.');
+      } else {
+        const c = Math.cos(k * v * st.t);
+        if (Math.abs(c) > 0.985) say = tr('kvt ≈ 0 or π: the crests of the two waves line up, so the sum is twice as tall. Every point is at its largest swing at the same moment.', 'kvt ≈ 0 או π: הפסגות של שני הגלים מתיישרות, ולכן הסכום גבוה פי שניים. כל הנקודות בשיא התנודה שלהן באותו רגע.');
+        else if (Math.abs(c) < 0.03) say = tr('kvt = π/2: the two waves are exactly opposite at every x, so the string is flat for an instant. It is still moving: all of its energy is kinetic now.', 'kvt = π/2: שני הגלים הפוכים בדיוק בכל x, ולכן המיתר ישר לרגע. הוא עדיין בתנועה: כל האנרגיה שלו עכשיו קינטית.');
+        else say = tr('The blue and red waves slide in opposite directions, but their sum (black) never moves sideways. It only grows and shrinks, by the factor cos kvt.', 'הגל הכחול והגל האדום מחליקים לכיוונים הפוכים, אבל הסכום שלהם (שחור) אף פעם לא זז הצידה. הוא רק גדל וקטן, לפי הגורם cos kvt.');
+      }
+      $('#ws-say').textContent = say;
+    }
+    function draw() {
+      const { ctx, w, h } = S, C = pal();
+      ctx.clearRect(0, 0, w, h);
+      const l = 16, r = w - 30; // x = x0 .. 0 maps to l .. r; the wall sits at r
+      const X = (x) => l + ((x - x0) / -x0) * (r - l);
+      const A = h * 0.068;
+      const lanes = [h * 0.15, h * 0.4, h * 0.73]; // incident, reflected, sum
+      const N = 360, t = st.t;
+      // node guides through all three lanes: x = -n lambda/2
+      for (let x = 0; x >= x0 - 1e-9; x -= lam / 2) line(ctx, [[X(x), h * 0.05], [X(x), h * 0.95]], C.line, 1, [2, 4]);
+      lanes.forEach((y) => line(ctx, [[X(x0), y], [X(0), y]], C.line, 1));
+      // envelope of the sum, +-2|sin kx| (only where the echo has arrived in build mode)
+      const echoX = st.mode === 'build' ? -(v * t + u0) : x0; // reflected wave exists for x > echoX
+      if (st.env) {
+        const up = [], dn = [];
+        for (let i = 0; i <= N; i++) {
+          const x = x0 + (i / N) * -x0;
+          if (x < echoX) continue;
+          const e = 2 * Math.abs(Math.sin(k * x));
+          up.push([X(x), lanes[2] - A * e]); dn.push([X(x), lanes[2] + A * e]);
+        }
+        if (up.length > 1) {
+          ctx.save(); ctx.fillStyle = C.soft; ctx.beginPath(); ctx.moveTo(up[0][0], up[0][1]);
+          up.forEach(([px, py]) => ctx.lineTo(px, py)); for (let i = dn.length - 1; i >= 0; i--) ctx.lineTo(dn[i][0], dn[i][1]);
+          ctx.closePath(); ctx.fill(); ctx.restore();
+        }
+      }
+      const a = [], b = [], s = [], sa = [], sb = [];
+      for (let i = 0; i <= N; i++) {
+        const x = x0 + (i / N) * -x0, yi = inc(x, t), yr = ref(x, t);
+        a.push([X(x), lanes[0] - A * yi]); b.push([X(x), lanes[1] - A * yr]);
+        s.push([X(x), lanes[2] - A * (yi + yr)]);
+        sa.push([X(x), lanes[2] - A * yi]); sb.push([X(x), lanes[2] - A * yr]);
+      }
+      line(ctx, sa, C.inc, 1.1, [4, 4]); line(ctx, sb, C.r, 1.1, [4, 4]); // the two parts, faint, inside the sum lane
+      line(ctx, a, C.inc, 2.4); line(ctx, b, C.r, 2.4); line(ctx, s, C.ink, 2.8);
+      // a marker riding one crest of each travelling wave shows that they move; the sum's nodes do not
+      const crest = (dir) => { // crest positions: k(x -+ vt) = pi/2 + 2 pi n
+        const out = [];
+        for (let n = -6; n <= 6; n++) { const x = (Math.PI / 2 + TAU * n) / k + dir * v * t; if (x >= x0 && x <= 0) out.push(x); }
+        return out;
+      };
+      crest(+1).forEach((x) => { if (inc(x, t) > 0.5) { ctx.save(); ctx.fillStyle = C.inc; ctx.beginPath(); ctx.arc(X(x), lanes[0] - A, 4.5, 0, TAU); ctx.fill(); ctx.restore(); } });
+      crest(-1).forEach((x) => { if (ref(x, t) > 0.5) { ctx.save(); ctx.fillStyle = C.r; ctx.beginPath(); ctx.arc(X(x), lanes[1] - A, 4.5, 0, TAU); ctx.fill(); ctx.restore(); } });
+      // nodes of the sum (where the echo has arrived)
+      for (let x = 0; x >= x0 - 1e-9; x -= lam / 2) {
+        if (x < echoX - 1e-9) continue;
+        ctx.save(); ctx.fillStyle = C.r; ctx.strokeStyle = C.bg; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(X(x), lanes[2], 4.5, 0, TAU); ctx.fill(); ctx.stroke(); ctx.restore();
+      }
+      if (st.mode === 'build' && echoX > x0 && echoX < 0) {
+        line(ctx, [[X(echoX), h * 0.3], [X(echoX), h * 0.95]], C.ten, 2, [6, 4]);
+        label(ctx, tr('echo front ←', iso('←') + ' חזית ההד'), X(echoX) + 6, h * 0.97 - 6, C.ten, { align: 'left', size: 11, halo: true });
+      }
+      // the wall spans all lanes
+      hatchWall(ctx, X(0), h * 0.04, h * 0.96, 1, C.muted);
+      // lane labels
+      const L = (txt, y, col) => label(ctx, txt, l + 2, y, col, { align: 'left', size: 12, halo: true });
+      L(tr('incident  ψᵢ = sin k(x − vt)  →', iso('ψᵢ = sin k(x − vt)  →') + '  נכנס'), lanes[0] - A * 1.75, C.inc);
+      L(tr('reflected  ψᵣ = −ψᵢ(−x,t) = sin k(x + vt)  ←', iso('ψᵣ = −ψᵢ(−x,t) = sin k(x + vt)  ←') + '  מוחזר'), lanes[1] - A * 1.75, C.r);
+      L(tr('sum  ψ = 2 sin kx · cos kvt', iso('ψ = 2 sin kx · cos kvt') + '  סכום'), lanes[2] - A * 2.55, C.ink);
+      label(ctx, '+', X(0) + 14, (lanes[0] + lanes[1]) / 2, C.muted, { size: 16, weight: '700' });
+      label(ctx, '=', X(0) + 14, (lanes[1] + lanes[2]) / 2 + 4, C.muted, { size: 16, weight: '700' });
+      label(ctx, 'x = 0', X(0) - 4, h * 0.99, C.muted, { size: 11, base: 'bottom', mono: true, align: 'right', halo: true });
+      label(ctx, tr('nodes: x = −nλ/2', 'צמתים: ' + iso('x = −nλ/2')), X(-lam * 1.25), lanes[2] + A * 2.45, C.r, { size: 11, halo: true });
+    }
+    addWidget(box, (dt) => {
+      if (st.playing) {
+        st.t += dt;
+        if (st.mode === 'build' && -(v * st.t + u0) < x0 - lam) st.t = 0; // replay once the echo has covered the string
+      }
+      draw(); readouts();
+    });
+    draw(); readouts();
+  }
+
+  /* ============ 7c. Two walls: try any wavelength and see whether it fits (L10 p.3-4) ============
+     The left wall alone allows psi = sin kx cos wt for every k. The right wall at x = L also needs
+     psi(L,t) = 0, i.e. sin kL = 0. The slider sets kL/pi freely; the figure shows the gap at the right
+     wall when it does not fit, and the bounce picture: after M round trips (path 2L, two flips = no flip)
+     the echoes add to |sin(M kL) / (M sin kL)|, which is 1 only at kL = n pi. Hebrew page only. */
+  function initFit() {
+    const box = $('#sim-fit');
+    if (!box) return;
+    const S = setupCanvas($('canvas', box), (w) => Math.max(300, Math.min(400, w * 0.5)));
+    const sl = $('#f-kl');
+    const M = 12;
+    const st = { q: parseFloat(sl.value), t: 0, playing: !reduceMotion };
+    const bounce = (q) => { const s = Math.sin(Math.PI * q); return Math.abs(s) < 1e-9 ? 1 : Math.abs(Math.sin(M * Math.PI * q) / (M * s)); };
+    function upd() {
+      const q = st.q, s = Math.sin(Math.PI * q), fits = Math.abs(q - Math.round(q)) < 0.005 && Math.round(q) > 0;
+      $('#f-kl-out').textContent = q.toFixed(2) + ' π';
+      $('#f-half').textContent = q.toFixed(2);
+      $('#f-lam').textContent = (2 / q).toFixed(2) + ' L';
+      $('#f-sin').textContent = fmt(Math.abs(s) < 0.005 ? 0 : s);
+      $('#f-b').textContent = Math.round(100 * bounce(q)) + '%';
+      $('#f-say').textContent = fits
+        ? tr('Fits: exactly ' + Math.round(q) + ' half-waves between the walls.', 'נכנס: בדיוק ' + Math.round(q) + ' חצאי גל בין הקירות. הקיר הימני יושב על צומת, וכל ההחזרות מתחברות באותו מופע. זה אופן ' + iso('n = ' + Math.round(q)) + '.')
+        : tr('Does not fit.', 'לא נכנס: ' + iso(q.toFixed(2)) + ' חצאי גל זה לא מספר שלם. הצורה ‎sin kx‎ מגיעה לקיר הימני בגובה ' + iso('sin kL = ' + fmt(s)) + ' (החץ האדום), אבל הקיר מחזיק את המיתר ב-0. ובתמונת ההחזרות: ההדים חוזרים במופעים שונים ומבטלים זה את זה.');
+    }
+    sl.addEventListener('input', () => { st.q = parseFloat(sl.value); upd(); });
+    $$('[data-fsnap]', box).forEach((b) => b.addEventListener('click', () => {
+      const d = b.dataset.fsnap;
+      st.q = d === 'up' ? Math.floor(st.q + 1e-6) + 1 : Math.max(1, Math.ceil(st.q - 1e-6) - 1);
+      if (d !== 'up' && d !== 'down') st.q = parseFloat(d);
+      st.q = Math.min(6.5, st.q); sl.value = st.q; upd();
+    }));
+    playButton($('#f-play'), () => st.playing, (p) => { st.playing = p; });
+    upd();
+    function draw() {
+      const { ctx, w, h } = S, C = pal();
+      ctx.clearRect(0, 0, w, h);
+      const q = st.q, kL = Math.PI * q;
+      // top: the string between x = 0 and x = L (plus a dashed ghost beyond the right wall)
+      const l = 22, r = w - 70, X = (u) => l + u * (r - l); // u = x / L
+      const yc = h * 0.3, A = h * 0.17, ct = Math.cos(TAU * 0.5 * st.t);
+      line(ctx, [[X(0), yc], [X(1), yc]], C.line, 1, [3, 4]);
+      // envelope
+      const up = [], dn = [];
+      for (let i = 0; i <= 240; i++) { const u = i / 240, e = Math.abs(Math.sin(kL * u)); up.push([X(u), yc - A * e]); dn.push([X(u), yc + A * e]); }
+      line(ctx, up, C.muted, 1, [2, 3]); line(ctx, dn, C.muted, 1, [2, 3]);
+      const pts = [], ghost = [];
+      for (let i = 0; i <= 300; i++) { const u = i / 300; pts.push([X(u), yc - A * Math.sin(kL * u) * ct]); }
+      for (let i = 0; i <= 60; i++) { const u = 1 + (i / 60) * 0.22; ghost.push([X(u), yc - A * Math.sin(kL * u) * ct]); }
+      line(ctx, ghost, C.ghost, 1.4, [4, 4]);
+      line(ctx, pts, C.ink, 2.6);
+      // nodes of sin kx inside [0, L]
+      for (let n = 0; n <= Math.floor(q + 1e-9); n++) {
+        const u = n / q; if (u > 1 + 1e-9) break;
+        ctx.save(); ctx.fillStyle = C.t; ctx.beginPath(); ctx.arc(X(u), yc, 4, 0, TAU); ctx.fill(); ctx.restore();
+      }
+      hatchWall(ctx, X(0), yc - A * 1.35, yc + A * 1.35, -1, C.muted);
+      hatchWall(ctx, X(1), yc - A * 1.35, yc + A * 1.35, 1, C.muted);
+      label(ctx, 'x = 0', X(0), yc + A * 1.35 + 10, C.muted, { size: 11, mono: true });
+      label(ctx, 'x = L', X(1), yc + A * 1.35 + 10, C.muted, { size: 11, mono: true });
+      const sEnd = Math.sin(kL);
+      if (Math.abs(sEnd) > 0.03) {
+        const y1 = yc - A * sEnd * ct;
+        arrow(ctx, X(1) + 30, yc, X(1) + 30, y1, C.r, 2);
+        label(ctx, tr('needed 0', 'צריך 0'), X(1) + 34, yc - A * 1.2, C.r, { size: 11, align: 'left', halo: true });
+        ctx.save(); ctx.fillStyle = C.r; ctx.beginPath(); ctx.arc(X(1), y1, 4.5, 0, TAU); ctx.fill(); ctx.restore();
+      } else {
+        label(ctx, tr('node ✓', '✓ צומת'), X(1) + 34, yc - A * 1.2, C.t, { size: 11, align: 'left', halo: true });
+      }
+      // bottom: what is left after M round trips, as a function of kL / pi
+      const by = h * 0.93, bh = h * 0.3, bl = 22, br = w - 22, qmax = 6.5;
+      const BX = (qq) => bl + (qq / qmax) * (br - bl);
+      line(ctx, [[bl, by], [br, by]], C.line, 1);
+      for (let n = 1; n <= 6; n++) { line(ctx, [[BX(n), by], [BX(n), by - bh]], C.line, 1, [2, 4]); label(ctx, n + 'π', BX(n), by + 9, C.muted, { size: 10, mono: true }); }
+      const curve = [];
+      for (let i = 0; i <= 900; i++) { const qq = 0.02 + (i / 900) * (qmax - 0.02); curve.push([BX(qq), by - bh * bounce(qq)]); }
+      line(ctx, curve, C.z, 1.8);
+      ctx.save(); ctx.fillStyle = C.z; ctx.beginPath(); ctx.arc(BX(q), by - bh * bounce(q), 5, 0, TAU); ctx.fill(); ctx.restore();
+      label(ctx, tr('what survives after ' + M + ' round trips  (horizontal: kL)', 'כמה נשאר אחרי ' + M + ' סיבובים הלוך-חזור  (ציר אופקי: ' + iso('kL') + ')'), (bl + br) / 2, by - bh - 10, C.z, { size: 11.5, halo: true });
+    }
+    addWidget(box, (dt) => { if (st.playing) st.t += dt; draw(); });
+    draw();
+  }
+
   /* ============ 8. Standing-wave builder with any end impedance (L10 p.1-3) ============ */
   function initStanding() {
     const box = $('#sim-standing');
@@ -960,8 +1170,10 @@
     safeInit('sim-circuit', initCircuit);
     safeInit('sim-taper', initTaper);
     safeInit('sim-energy', initEnergy);
+    safeInit('sim-wallsum', initWallSum);
     safeInit('sim-standing', initStanding);
     safeInit('sim-quarter', initQuarter);
+    safeInit('sim-fit', initFit);
     safeInit('sim-modes', initModes);
     safeInit('sim-packet', initPacket);
     safeInit('try-buttons', initTryButtons);
