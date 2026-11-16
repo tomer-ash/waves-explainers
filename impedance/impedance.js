@@ -1054,6 +1054,118 @@
     draw();
   }
 
+  /* ============ 4e. Quarter-wave layer: the echoes cancel (recitation 6, Example 4B) ============
+     Steady wave, recitation convention e^{i(wt - kx)} for a right-mover. Echo terms seen in string 1:
+     e0 = r_1m, e_n = t_1m t_m1 r_m2 q (r_m1 r_m2 q)^(n-1), q = e^{-2 i k_m L}; their sum is
+     r_tot = (r_1m + r_m2 q) / (1 + r_1m r_m2 q). Top: the direct echo, the echo from inside and their
+     sum as waves on string 1. Bottom: the same terms as arrows head to tail. Hebrew page only. */
+  function initEchoes() {
+    const box = $('#sim-echoes');
+    if (!box) return;
+    const S = setupCanvas($('canvas', box), (w) => Math.max(260, Math.min(320, w * 0.4)));
+    const S2 = setupCanvas($$('canvas', box)[1], (w) => Math.max(280, Math.min(330, w * 0.45)));
+    const zl = $('#ec-len'), zz = $('#ec-zm');
+    const Z1 = 1, Z2 = 3;
+    const st = { len: 0.25, zm: Math.sqrt(3), t: 0, playing: !reduceMotion };
+    const cx = (re, im = 0) => ({ re, im });
+    const add = (a, b) => cx(a.re + b.re, a.im + b.im);
+    const mul = (a, b) => cx(a.re * b.re - a.im * b.im, a.re * b.im + a.im * b.re);
+    const sc = (a, s) => cx(a.re * s, a.im * s);
+    const div = (a, b) => { const d = b.re * b.re + b.im * b.im; return cx((a.re * b.re + a.im * b.im) / d, (a.im * b.re - a.re * b.im) / d); };
+    const abs = (a) => Math.hypot(a.re, a.im);
+    function terms() {
+      const Zm = st.zm, r1m = (Z1 - Zm) / (Z1 + Zm), rm1 = -r1m, rm2 = (Zm - Z2) / (Zm + Z2);
+      const t1m = (2 * Z1) / (Z1 + Zm), tm1 = (2 * Zm) / (Zm + Z1);
+      const ph = -2 * TAU * st.len, q = cx(Math.cos(ph), Math.sin(ph)); // 2 k_m L = 4 pi L / lambda_m
+      const list = [cx(r1m)];
+      let e = mul(cx(t1m * tm1 * rm2), q);
+      for (let n = 0; n < 12; n++) { list.push(e); e = mul(e, sc(q, rm1 * rm2)); }
+      const rtot = div(add(cx(r1m), sc(q, rm2)), add(cx(1), sc(q, r1m * rm2)));
+      return { r1m, rm2, q, list, rtot };
+    }
+    function upd() {
+      const T = terms(), RE = abs(T.rtot) ** 2;
+      $('#ec-len-out').textContent = st.len.toFixed(2) + ' λₘ';
+      $('#ec-zm-out').textContent = fmt(st.zm) + ' Z₁';
+      $('#ec-ph').textContent = (4 * st.len).toFixed(2) + ' π';
+      $('#ec-r1').textContent = fmt(T.r1m, 3);
+      $('#ec-r2').textContent = fmt(T.rm2, 3);
+      $('#ec-rt').textContent = fmt(abs(T.rtot), 3);
+      $('#ec-T').textContent = pct(1 - RE);
+      const qw = Math.abs(st.len - 0.25) < 0.006 || Math.abs(st.len - 0.75) < 0.006, gm = Math.abs(st.zm - Math.sqrt(3)) < 0.02;
+      const hw = Math.abs(st.len - 0.5) < 0.006;
+      $('#ec-say').textContent = qw && gm
+        ? 'רבע אורך גל ו-Zₘ = √(Z₁Z₂): ההד מבפנים חוזר בדיוק הפוך (q = −1) ובאותו גודל, והם מבטלים זה את זה. אין גל מוחזר: 100% עובר.'
+        : hw
+          ? 'חצי אורך גל (q = +1): ההד מבפנים חוזר באותו מופע, והמיתר האמצעי "נעלם": ההחזרה היא בדיוק של חיבור ישיר, 25%.'
+          : qw
+            ? 'רבע אורך גל, אבל Zₘ ≠ √(Z₁Z₂): ההדים הפוכים, אבל לא באותו גודל (r₁ₘ ≠ rₘ₂), אז נשאר משהו.'
+            : 'האורך לא רבע גל: ההד מבפנים מגיע במופע אחר, לא הפוך, ולכן הביטול חלקי.';
+    }
+    zl.addEventListener('input', () => { st.len = parseFloat(zl.value); upd(); });
+    zz.addEventListener('input', () => { st.zm = Math.pow(10, parseFloat(zz.value)); upd(); });
+    $$('[data-ec]', box).forEach((b) => b.addEventListener('click', () => {
+      const [len, zm] = b.dataset.ec.split(',').map(Number);
+      st.len = len; st.zm = zm || Math.sqrt(3); zl.value = st.len; zz.value = Math.log10(st.zm); upd();
+    }));
+    playButton($('#ec-play'), () => st.playing, (p) => { st.playing = p; });
+    upd();
+    function draw() {
+      const C = pal(), T = terms(), wt = TAU * 0.4 * st.t;
+      { // three lanes on string 1, a left-mover Re{c e^{i(wt + k x)}}, x from -2 lambda_1 to 0
+        const { ctx, w, h } = S;
+        ctx.clearRect(0, 0, w, h);
+        const l = 12, r = w - 26, X = (u) => l + (u + 2) / 2 * (r - l); // u = x / lambda_1
+        const inside = T.list.slice(1).reduce(add, cx(0));
+        const lanes = [[cx(T.r1m), h * 0.17, C.r, 'הד מצומת א: ' + iso('r₁ₘ')], [inside, h * 0.47, C.ten, 'כל ההדים מבפנים (חזרו מצומת ב)'], [T.rtot, h * 0.8, C.ink, 'סך הכול מוחזר: ' + iso('r_tot')]];
+        const A = h * 0.09 / 0.3; // r = 0.3 fills about 0.09 h
+        lanes.forEach(([c, y, col, txt]) => {
+          line(ctx, [[X(-2), y], [X(0), y]], C.line, 1);
+          const pts = [];
+          for (let i = 0; i <= 260; i++) { const u = -2 + (i / 260) * 2, a = wt + TAU * u; pts.push([X(u), y - A * (c.re * Math.cos(a) - c.im * Math.sin(a))]); }
+          line(ctx, pts, col, col === C.ink ? 2.8 : 2.2);
+          label(ctx, txt + '   |·| = ' + abs(c).toFixed(3), r - 4, y - h * 0.12, col, { size: 11.5, align: 'right', halo: true });
+        });
+        label(ctx, '+', l + 6, (lanes[0][1] + lanes[1][1]) / 2, C.muted, { size: 15, weight: '700' });
+        label(ctx, '=', l + 6, (lanes[1][1] + lanes[2][1]) / 2 + 4, C.muted, { size: 15, weight: '700' });
+        hatchWall(ctx, X(0) + 2, h * 0.05, h * 0.95, 1, C.z);
+        label(ctx, 'צומת א', X(0) + 2, h * 0.99 - 4, C.z, { size: 10.5, align: 'right', base: 'bottom' });
+      }
+      { // phasor chain
+        const { ctx, w, h } = S2;
+        ctx.clearRect(0, 0, w, h);
+        // scale so the whole chain fits; each arrow is drawn a few pixels lower than the one before,
+        // so collinear echoes (the quarter-wave case) do not hide each other. Dotted ticks join them.
+        let p = cx(0), ext = 0.05, exH = 0.05, exV = 0.02;
+        T.list.forEach((e) => { p = add(p, e); ext = Math.max(ext, abs(p)); exH = Math.max(exH, Math.abs(p.re)); exV = Math.max(exV, Math.abs(p.im)); });
+        const flat = exV < 0.03 * exH; // all echoes on one line (quarter or half wave): stagger them
+        const R = Math.min((w * 0.42) / exH, (h * 0.3) / exV), ox = w * 0.5, oy = h * 0.42, dy = flat ? 13 : 0;
+        line(ctx, [[ox - R * ext * 1.1, oy], [ox + R * ext * 1.1, oy]], C.line, 1);
+        line(ctx, [[ox, oy - R * ext * 0.9], [ox, oy + R * ext * 0.9 + 4 * dy]], C.line, 1);
+        p = cx(0);
+        T.list.forEach((e, i) => {
+          const q2 = add(p, e), y0 = oy + i * dy, y1 = oy + Math.min(i + 1, 4) * dy;
+          if (abs(e) > 0.002) {
+            arrow(ctx, ox + R * p.re, y0 - R * p.im, ox + R * q2.re, (i < 4 ? y0 : y1) - R * q2.im, i === 0 ? C.r : C.ten, i === 0 ? 3 : i === 1 ? 2.6 : 1.6);
+            if (i < 4) line(ctx, [[ox + R * q2.re, y0 - R * q2.im], [ox + R * q2.re, y1 - R * q2.im]], C.muted, 1, [1, 3]);
+          }
+          if (i < 3 && abs(e) > 0.02) label(ctx, ['הד 1', 'הד 2', 'הד 3'][i], ox + R * (p.re + q2.re) / 2, y0 - R * (p.im + q2.im) / 2 - 10, i === 0 ? C.r : C.ten, { size: 11, halo: true });
+          p = q2;
+        });
+        const yEnd = oy + 4 * dy;
+        if (abs(T.rtot) > 0.004) {
+          const ys = flat ? yEnd + 16 : oy; // flat: the sum on its own row below the chain
+          arrow(ctx, ox, ys, ox + R * T.rtot.re, ys - R * T.rtot.im, C.ink, 2.2);
+        }
+        ctx.save(); ctx.fillStyle = C.ink; ctx.beginPath(); ctx.arc(ox + R * T.rtot.re, yEnd - R * T.rtot.im, 4.5, 0, TAU); ctx.fill(); ctx.restore();
+        label(ctx, abs(T.rtot) < 0.004 ? 'השרשרת חוזרת בדיוק לקו האנכי של הראשית: r_tot = 0' : 'r_tot (חץ שחור): מהראשית לסוף השרשרת', w / 2, 14, C.ink, { size: 12, halo: true });
+        label(ctx, 'כל הד הוא חץ; מחברים ראש לזנב', w / 2, h - 10, C.muted, { size: 11 });
+      }
+    }
+    addWidget(box, (dt) => { if (st.playing) st.t += dt; draw(); });
+    draw();
+  }
+
   /* ============ 8. Standing-wave builder with any end impedance (L10 p.1-3) ============ */
   function initStanding() {
     const box = $('#sim-standing');
@@ -1322,6 +1434,7 @@
     safeInit('sim-wallsum', initWallSum);
     safeInit('sim-standing', initStanding);
     safeInit('sim-firstpulse', initFirstPulse);
+    safeInit('sim-echoes', initEchoes);
     safeInit('sim-quarter', initQuarter);
     safeInit('sim-fit', initFit);
     safeInit('sim-modes', initModes);
