@@ -905,6 +905,155 @@
     draw();
   }
 
+  /* ============ 4d. The first transmitted pulse through a middle string (recitation 6, Example 4A) ============
+     Exact solution for piecewise-uniform strings with equal tension (T = 1, Z1 = 1, v = 1/Z):
+     every pulse is a copy of the incident time profile g, so each segment is
+     psi = a * g(t - tj - d (x - xj) / v_s) on its own string. A segment that reaches a junction
+     spawns r_ab * (reflected) and t_ab * (transmitted) segments; this is the method of the
+     lecture (L07) applied junction by junction. Hebrew page only. */
+  function initFirstPulse() {
+    const box = $('#sim-firstpulse');
+    if (!box) return;
+    const S = setupCanvas($('canvas', box), (w) => Math.max(210, Math.min(270, w * 0.34)));
+    const S2 = setupCanvas($$('canvas', box)[1], (w) => (w < 560 ? 420 : 210));
+    const zs = $('#fp-zm');
+    const Z1 = 1, Z2 = 3, L = 0.5, sig = 0.11, tA = 1.3;
+    const st = { zm: Math.sqrt(3), t: 0, playing: !reduceMotion, segs: [], pulses: [] };
+    if (!st.playing) st.t = 6;
+    const rr = (a, b) => (a - b) / (a + b), tt = (a, b) => (2 * a) / (a + b);
+    const Tfirst = (zm) => (Z2 / Z1) * Math.pow(tt(Z1, zm) * tt(zm, Z2), 2);
+    function build() {
+      const Zm = st.zm, Zs = [Z1, Zm, Z2], vs = Zs.map((z) => 1 / z), vm = vs[1];
+      const segs = [], pulses = [];
+      // segment: { s: string 0/1/2, d: +1/-1, a, tj, xj }
+      const q = [{ s: 0, d: 1, a: 1, tj: tA, xj: 0, k: 0 }];
+      while (q.length) {
+        const g = q.shift();
+        segs.push(g);
+        if (Math.abs(g.a) < 2e-3 || g.k > 14) continue;
+        if (g.s === 1) { // travels to the other end of the middle string
+          const tj = g.tj + L / vm;
+          if (g.d > 0) { // reaches B at x = L
+            q.push({ s: 1, d: -1, a: g.a * rr(Zm, Z2), tj, xj: L, k: g.k + 1 });
+            const tr2 = { s: 2, d: 1, a: g.a * tt(Zm, Z2), tj, xj: L, k: g.k + 1 };
+            q.push(tr2); pulses.push({ a: tr2.a, tj, side: 'T' });
+          } else { // reaches A at x = 0
+            q.push({ s: 1, d: 1, a: g.a * rr(Zm, Z1), tj, xj: 0, k: g.k + 1 });
+            const tr1 = { s: 0, d: -1, a: g.a * tt(Zm, Z1), tj, xj: 0, k: g.k + 1 };
+            q.push(tr1); pulses.push({ a: tr1.a, tj, side: 'R' });
+          }
+        } else if (g.s === 0 && g.d > 0) { // the incident pulse at A
+          q.push({ s: 0, d: -1, a: g.a * rr(Z1, Zm), tj: g.tj, xj: 0, k: 1 });
+          pulses.push({ a: g.a * rr(Z1, Zm), tj: g.tj, side: 'R' });
+          q.push({ s: 1, d: 1, a: g.a * tt(Z1, Zm), tj: g.tj, xj: 0, k: 1 });
+        }
+      }
+      st.segs = segs; st.pulses = pulses; st.vs = vs;
+    }
+    const gp = (u) => Math.exp(-(u / sig) * (u / sig));
+    function psi(x, t) {
+      const s = x < 0 ? 0 : x < L ? 1 : 2, v = st.vs[s];
+      let y = 0;
+      for (const g of st.segs) if (g.s === s) y += g.a * gp(t - g.tj - (g.d * (x - g.xj)) / v);
+      return y;
+    }
+    function upd() {
+      const zm = st.zm, a = tt(Z1, zm), b = tt(zm, Z2);
+      $('#fp-zm-out').textContent = fmt(zm) + ' Z₁';
+      $('#fp-t1').textContent = fmt(a);
+      $('#fp-t2').textContent = fmt(b);
+      $('#fp-tf').textContent = fmt(a * b, 3);
+      $('#fp-E').textContent = pct(Tfirst(zm));
+      const near = Math.abs(zm - Math.sqrt(3)) < 0.02;
+      $('#fp-say').textContent = near
+        ? 'Zₘ = √(Z₁Z₂) = √3 Z₁: שתי המדרגות שוות ביחס (פי 1.73 כל אחת), והפולס הראשון נושא 86.2%. יותר מכל חיבור ישיר.'
+        : Math.abs(zm - 1) < 0.02 || Math.abs(zm - 3) < 0.02
+          ? 'Zₘ שווה לאחד המיתרים: נקודת חיבור אחת נעלמת (שם t = 1, r = 0), ונשאר החיבור הישיר. 75%, ואין פולסים מאוחרים.'
+          : zm < Math.sqrt(3)
+            ? 'Zₘ קטן מ-√3 Z₁: המדרגה הראשונה קטנה והשנייה גדולה מדי. הגדלת Zₘ משפרת (הנגזרת חיובית).'
+            : 'Zₘ גדול מ-√3 Z₁: עכשיו המדרגה הראשונה גדולה מדי. הקטנת Zₘ משפרת (הנגזרת שלילית).';
+    }
+    function setZ(z) { st.zm = z; zs.value = Math.log10(z); build(); upd(); }
+    zs.addEventListener('input', () => { st.zm = Math.pow(10, parseFloat(zs.value)); build(); upd(); });
+    $$('[data-fpz]', box).forEach((b) => b.addEventListener('click', () => { setZ(parseFloat(b.dataset.fpz) || Math.sqrt(3)); st.t = 0; }));
+    playButton($('#fp-play'), () => st.playing, (p) => { st.playing = p; });
+    $('#fp-restart').addEventListener('click', () => { st.t = 0; });
+    setZ(Math.sqrt(3));
+    function draw() {
+      const C = pal(), t = st.t;
+      { // strings
+        const { ctx, w, h } = S;
+        ctx.clearRect(0, 0, w, h);
+        const xl = -1.25, xr = L + 1.0, l = 10, r = w - 10;
+        const X = (x) => l + ((x - xl) / (xr - xl)) * (r - l), yc = h * 0.6, A = h * 0.32;
+        const zw = (z) => 1.4 + 1.7 * z;
+        [[xl, 0, Z1], [0, L, st.zm], [L, xr, Z2]].forEach(([a, b, z]) => {
+          const pts = [];
+          for (let i = 0; i <= 220; i++) { const x = a + (i / 220) * (b - a); pts.push([X(x), yc - A * psi(Math.min(Math.max(x, a + 1e-9), b - 1e-9), t)]); }
+          line(ctx, pts, C.ink, zw(z));
+        });
+        [0, L].forEach((x) => { ctx.save(); ctx.fillStyle = C.z; ctx.beginPath(); ctx.arc(X(x), yc - A * psi(x + (x === 0 ? -1e-9 : 1e-9), t), 4, 0, TAU); ctx.fill(); ctx.restore(); });
+        label(ctx, 'מיתר 1 · ' + iso('Z₁'), X(-0.62), h * 0.1, C.muted, { size: 12 });
+        label(ctx, 'אמצעי · ' + iso('Zₘ'), X(L / 2), h * 0.1, C.z, { size: 12 });
+        label(ctx, 'מיתר 2 · ' + iso('Z₂ = 3Z₁'), X(L + 0.5), h * 0.1, C.muted, { size: 12 });
+        line(ctx, [[X(0), h * 0.18], [X(0), h * 0.95]], C.line, 1, [2, 4]);
+        line(ctx, [[X(L), h * 0.18], [X(L), h * 0.95]], C.line, 1, [2, 4]);
+        label(ctx, 'א', X(0), h * 0.97 - 4, C.muted, { size: 11 });
+        label(ctx, 'ב', X(L), h * 0.97 - 4, C.muted, { size: 11 });
+        // tag the pulses in string 2 by order
+        const tp = st.pulses.filter((p) => p.side === 'T');
+        tp.forEach((p, i) => {
+          const x = L + st.vs[2] * (t - p.tj);
+          if (x > L + 0.04 && x < xr - 0.02 && Math.abs(p.a) > 0.01) label(ctx, i === 0 ? 'ראשון' : (i + 1) + '', X(x), yc - A * Math.abs(p.a) - 12, i === 0 ? C.t : C.muted, { size: 11, halo: true });
+        });
+      }
+      { // plots
+        const { ctx, w, h } = S2;
+        ctx.clearRect(0, 0, w, h);
+        const narrow = w < 560;
+        const P1 = narrow ? [12, 22, w - 12, h / 2 - 22] : [12, 22, w / 2 - 14, h - 26];
+        const P2 = narrow ? [12, h / 2 + 22, w - 12, h - 26] : [w / 2 + 14, 22, w - 12, h - 26];
+        // panel 1: T_first against Zm (log axis 0.3 .. 10)
+        {
+          const [a, b, c, d] = P1, lo = Math.log10(0.3), hi = 1;
+          const PX = (z) => a + ((Math.log10(z) - lo) / (hi - lo)) * (c - a), PY = (e) => d - e * (d - b);
+          line(ctx, [[a, d], [c, d]], C.line, 1);
+          line(ctx, [[a, PY(0.75)], [c, PY(0.75)]], C.muted, 1, [4, 4]);
+          label(ctx, 'ישיר 75%', c - 2, PY(0.75) - 8, C.muted, { size: 10.5, align: 'right', halo: true });
+          const pts = [];
+          for (let i = 0; i <= 200; i++) { const z = Math.pow(10, lo + (i / 200) * (hi - lo)); pts.push([PX(z), PY(Tfirst(z))]); }
+          line(ctx, pts, C.t, 2);
+          [1, Math.sqrt(3), 3].forEach((z, i) => { line(ctx, [[PX(z), d], [PX(z), d + 4]], C.muted, 1); label(ctx, ['Z₁', '√3', 'Z₂'][i], PX(z), d + 11, C.muted, { size: 10, mono: true }); });
+          ctx.save(); ctx.fillStyle = C.z; ctx.beginPath(); ctx.arc(PX(st.zm), PY(Tfirst(st.zm)), 5, 0, TAU); ctx.fill(); ctx.restore();
+          label(ctx, 'אנרגיית הפולס הראשון כפונקציה של ' + iso('Zₘ'), (a + c) / 2, b - 10, C.t, { size: 11.5 });
+        }
+        // panel 2: energy of each transmitted pulse that has already arrived
+        {
+          const [a, b, c, d] = P2;
+          const tp = st.pulses.filter((p) => p.side === 'T').slice(0, 6);
+          const n = 6, bw = (c - a) / (n + 1.5);
+          line(ctx, [[a, d], [c, d]], C.line, 1);
+          let cum = 0;
+          tp.forEach((p, i) => {
+            const E = (Z2 / Z1) * p.a * p.a, arrived = t > p.tj + 0.05;
+            const x = a + (i + 0.3) * bw;
+            ctx.save(); ctx.globalAlpha = arrived ? 1 : 0.18; ctx.fillStyle = i === 0 ? C.t : C.muted;
+            ctx.fillRect(x, d - E * (d - b), bw * 0.7, E * (d - b)); ctx.restore();
+            label(ctx, i === 0 ? 'ראשון' : String(i + 1), x + bw * 0.35, d + 10, C.muted, { size: 10 });
+            if (arrived) { cum += E; if (E > 0.0005) label(ctx, (100 * E).toFixed(1) + '%', x + bw * 0.35, d - E * (d - b) - 8, C.ink, { size: 10, mono: true, halo: true }); }
+          });
+          label(ctx, 'כל פולס שעבר למיתר 2 (כל ' + iso('2L/vₘ') + ')', (a + c) / 2, b - 10, C.ink, { size: 11.5 });
+          label(ctx, 'סה"כ עד עכשיו: ' + pct(cum), c - 2, b + 10, C.t, { size: 11, align: 'right', halo: true });
+        }
+      }
+    }
+    addWidget(box, (dt) => {
+      if (st.playing) { st.t += dt * 0.9; if (st.t > 14) st.t = 0; }
+      draw();
+    });
+    draw();
+  }
+
   /* ============ 8. Standing-wave builder with any end impedance (L10 p.1-3) ============ */
   function initStanding() {
     const box = $('#sim-standing');
@@ -1172,6 +1321,7 @@
     safeInit('sim-energy', initEnergy);
     safeInit('sim-wallsum', initWallSum);
     safeInit('sim-standing', initStanding);
+    safeInit('sim-firstpulse', initFirstPulse);
     safeInit('sim-quarter', initQuarter);
     safeInit('sim-fit', initFit);
     safeInit('sim-modes', initModes);
